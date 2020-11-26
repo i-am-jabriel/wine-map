@@ -2,6 +2,10 @@
     display: sticky;
     justify-content: center;
 }
+.row{
+    display:flex;
+    justify-content: center;
+}
 .wrap{
     flex-wrap: wrap;
 }
@@ -13,7 +17,8 @@
 .content-post{
     padding:1em 2em;
     border:1px solid black;
-    width:20em;
+    width:28em;
+    margin-bottom:3em;
 }
 .navbar{
     position:fixed;
@@ -23,4 +28,25 @@
 }
 .main-container{
     padding:40px 0 120px;
+}
+.post-container{
+    box-sizing: border-box;
+    border:1px solid black;
+    width:100%;
+    padding:40px 40px 80px;
+    margin-bottom: 20px;
+}
+.post-container img{
+    max-width:100%;
+    max-height:500px;
+}
+.comment-container{
+    margin-right: auto;
+    padding-left:40px;
+    position: relative;
+}
+.comment-container::before{
+    content:'>';
+    position: absolute;
+    left:20px;
 }

@@ -34,25 +34,28 @@ export class Post{
         Post.posts[id] = this;
     }
     static posts = [];
-    render(I){
+    render(user,I){
         console.log('individual post #',this.id,' with ',this.comments.length,'comments');
         return (
-            <div className='content-post col' key={I}>
-                {this.body.map((c,i)=>c.render(i))}
+            <div className='content-post col' key={this.id}>
+                <div className='col post-container'>
+                    {this.body.map((c,i)=>c.render(i))}
+                </div>
                 <div className='post-comments'>
                     {this.comments.length?
-                        this.comments.map((c,i)=>c.render(i)):
+                        this.comments.map((c,i)=>c.render(user,i)):
                         <p>No Comments Yet...{this.comments.length}</p>
                     }
                 </div>
             </div>
         )
     }
-    static render(posts){
-        console.log('starting to get value');
+    static render(user,posts){
+        console.log('starting page render');
+        window.corktaint.setPosts(posts);
         return (
-            <div className='content-posts row wrap'>
-                {posts.map((p,i)=>p.render(i))}
+            <div className='content-posts col wrap'>
+                {posts.map(p=>p.render(user))}
             </div>
         )
     }
@@ -60,22 +63,22 @@ export class Post{
         // console.log('creating post at',Post.posts.length, title, body);
         return new Post(Post.posts.length, userid, title, [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x)));
     }
-    static async from(a,set){
+    static async from(a){
         let posts = a.map(b=>new Post(b));
         var promises = posts.map(p=>fetch(`${api}/comments/posts/${p.id}`)
             .then(r=>r.json())
             .then(r=>{
-                const [a,b] = Comment.from(r,5,set);
+                const [a,b] = Comment.from(r,5);
                 p.comments = a;
                 return Promise.all(b);
             }
-        ));
+        )).concat(posts.map(p=>Like.getLikesFor(p)));
         do{
             promises = (await Promise.all(promises)).filter(p=>p.then);
-        }while(promises.length);
-        //await Promise.all(promises);
-        set(posts);
-        console.log('finished',posts);
+        }
+        while(promises.length);
+        console.log('finished',posts,window.corktaint);
+        window.corktaint.setPage(Post.render(window.corktaint.user,posts));
     }
 }
 // id serial primary key,
@@ -85,21 +88,66 @@ export class Post{
 // FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
 // postDate timestamp NOT NULL DEFAULT NOW()
 export class Comment{
-    constructor(id, body = [], userId, comments = [], postDate = ''){
-        if(!body.length) Object.assign(this,{body:[],comments:[]},id);
-        else Object.assign(this,{body:[],comments:[]}, {id, body, userId, comments, postDate});
+    constructor(id, body = [], userid, comments = [], postdate = ''){
+        Object.assign(this,{body:[],comments:[],likes:[]});
+        if(!body.length) Object.assign(this,id);
+        else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
+        ['like','unlike','edit','destroy'].forEach(f=>this[f]=this[f].bind(this));
     }
-    render(I){
-        console.log('attempting to render comment ',this.id,this.body);
+    render(user){
+        var like = this.likes.find(l=>l.userid==this.userid);
+        // console.log(this.body,this.comments);
         return [
-            <div className='comment-container' key={I}>
+            <div className='comment-container' key={this.id}>
                 {this.body.map((c,i)=>c.render(i))}
+                {this.likes.length ? <p className='comment-like-count'>{this.likes.length} ❤️</p> : null}
+                <div className='comment-options'>
+                    { !like ?
+                        <><span onClick={()=>this.like(user)}>Like</span> | </>:
+                        <><span onClick={()=>this.unlike(user,like)}>Unlike</span> |</>
+                    }{ user.id == this.userid || user.admin ?
+                        <>
+                            <span onClick={()=>this.edit(user)}> Edit</span> | 
+                            <span onClick={()=>this.destroy(user)} > Delete</span>
+                        </>:null
+                    }    
+                </div>          
                 <div className='comment-chain'>
-                    {this.comments.map((c,i)=>c.render(i))}
+                    {this.comments.map((c)=>c.render(user))}
                 </div>
             </div>
         ]
+    }
+    unlike(user,like){
+        fetch(`${api}/likes/${like.id}`,{method:'DELETE'})
+            .then(r=>{
+                this.likes = this.likes.splice(this.likes.indexOf(like),1);
+                window.corktaint.setPosts(window.corktaint.posts);
+            })
+    }
+    like(user){
+        console.log({userid:user.id});
+        fetch(`${api}/likes/comments/${this.id}`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({userid:user.id})
+        }).then(r=>{
+            console.log(r);
+            return r.json()})
+        .then(r=>{
+            console.log(r)
+            this.likes = this.likes.concat(r);
+            console.log(this.likes);
+            debugger;
+            window.corktaint.setPosts(window.corktaint.posts);
+        });
+
+    }
+    edit(){
+
+    }
+    destroy(){
     }
     static from(a, i, set){
         if(--i<0)return [];
@@ -107,12 +155,24 @@ export class Comment{
         var promises = comments.map(c=>fetch(`${api}/comments/comments/${c.id}`)
             .then(r=>r.json())
             .then(r=>{
-                console.log('loaded a comment at level ',i)
                 const [a,b]=Comment.from(r,i);
-                c.comments = a;
+                c.comments = a || [];
                 if(b)return Promise.all(b);
-            }));
+            })).concat(comments.map(c=>Like.getLikesFor(c)));
         return [comments, promises]
+    }
+}
+export class Like{
+    constructor(a){
+        Object.assign(this,a);
+    }
+    static getLikesFor(obj){
+        // console.log('atempting to get likes for',obj.constructor.name,' id',obj.id);
+        return fetch(`${api}/likes/${obj.constructor.name.toLowerCase()}s/${obj.id}`)
+            .then(r=>r.json())
+            .then(r=>{
+                console.log(r);
+                return obj.likes=r})
     }
 }
 export class Content{

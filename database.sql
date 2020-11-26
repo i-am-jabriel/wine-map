@@ -61,21 +61,21 @@ CREATE TABLE likes(
 create table likesUsers(
     id serial primary key,
     childId int,
-    foreign key(childId) references comments(id) on delete cascade,
+    foreign key(childId) references likes(id) on delete cascade,
     parentId int,
     foreign key(parentId) references users(id) on delete CASCADE
 );
 create table likesPosts(
     id serial primary key,
     childId int,
-    foreign key(childId) references comments(id) on delete cascade,
+    foreign key(childId) references likes(id) on delete cascade,
     parentId int,
     foreign key(parentId) references posts(id) on delete CASCADE
 );
 create table likesComments(
     id serial primary key,
     childId int,
-    foreign key(childId) references comments(id) on delete cascade,
+    foreign key(childId) references likes(id) on delete cascade,
     parentId int,
     foreign key(parentId) references comments(id) on delete CASCADE
 );
@@ -83,11 +83,13 @@ create table likesComments(
 
 insert into users (email,name) values ('officialjabe@gmail.com','Abe Johnson');
 insert into posts(userId,title,body) values(1,'my first post',array['this is my first post','it is filled with content','rejoice']);
--- insert into posts(userId,title,body) values(1,'my first post',array['2nd post','doesnt have much going for it','[img](https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true)']);
-insert into comments(userId, body) values(1,array['your first post is kinda lame ngl']);
+insert into posts(userId,title,body) values(1,'my first post',array['2nd post','doesnt have much going for it','[img](https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true)']);
+insert into comments(userId, body) values(1,array['your first post needs work bud']);
 insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
+
 insert into comments(userId, body) values(1,array['be the change you want to see in the universe :D']);
-insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
+insert into commentsComments(parentId, childId) values(1,currval('comments_id_seq'));
+
 insert into comments(userId, body) values(1,array['3rd comment holy smokes']);
 insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
 
