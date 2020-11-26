@@ -83,10 +83,16 @@ create table likesComments(
 
 insert into users (email,name) values ('officialjabe@gmail.com','Abe Johnson');
 insert into posts(userId,title,body) values(1,'my first post',array['this is my first post','it is filled with content','rejoice']);
-insert into posts(userId,title,body) values(1,'my first post',array['2nd post','doesnt have much going for it','[img](https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true)']);
+-- insert into posts(userId,title,body) values(1,'my first post',array['2nd post','doesnt have much going for it','[img](https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true)']);
 insert into comments(userId, body) values(1,array['your first post is kinda lame ngl']);
 insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
 insert into comments(userId, body) values(1,array['be the change you want to see in the universe :D']);
 insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
 insert into comments(userId, body) values(1,array['3rd comment holy smokes']);
 insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
+
+insert into comments(userId, body) values(1,array['another comment holy smokes']);
+insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq'));
+
+insert into comments(userId, body) values(1,array['filling the database']);
+insert into commentsPosts(parentId, childId) values(2,currval('comments_id_seq'));

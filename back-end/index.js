@@ -11,7 +11,8 @@ app.get('/', (request, response) => {
     response.json({ info: 'Node.js, Epxress, and Postgres API'})
   });
 ['users','posts','comments'].forEach(a=>app.get(`/${a}`, db.get(a)));
-['users','posts','comments'].forEach(a=>app.get(`/comments/${a}`, db.getJoin('comments',a)));
+['users','posts','comments'].forEach(a=>app.get(`/comments/${a}/:id`, db.getJoin('comments',a)));
+['users','posts','comments','likes'].forEach(a=>app.put(`/${a}`, db.put(a)))
 // app.get('/users',db.get('users'));
 // app.get('/posts',db.get('users'));
 app.listen(port,()=>console.log('hi'));

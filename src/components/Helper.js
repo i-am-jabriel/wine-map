@@ -1,3 +1,4 @@
+export const api = 'http://localhost:2999'
 // CREATE TABLE users (
 //     id serial primary key,
 //     name VARCHAR(32),
@@ -33,13 +34,16 @@ export class Post{
         Post.posts[id] = this;
     }
     static posts = [];
-    render(i){
-        console.log('individual post #',this.id);
+    render(I){
+        console.log('individual post #',this.id,' with ',this.comments.length,'comments');
         return (
-            <div className='content-post col' key={i}>
+            <div className='content-post col' key={I}>
                 {this.body.map((c,i)=>c.render(i))}
-                <div className='post-comment'>
-                    {this.comments.map((c,i)=>c.values(i))}
+                <div className='post-comments'>
+                    {this.comments.length?
+                        this.comments.map((c,i)=>c.render(i)):
+                        <p>No Comments Yet...{this.comments.length}</p>
+                    }
                 </div>
             </div>
         )
@@ -56,8 +60,22 @@ export class Post{
         // console.log('creating post at',Post.posts.length, title, body);
         return new Post(Post.posts.length, userid, title, [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x)));
     }
-    static from(a){
-        return a.map(b=>new Post(b));
+    static async from(a,set){
+        let posts = a.map(b=>new Post(b));
+        var promises = posts.map(p=>fetch(`${api}/comments/posts/${p.id}`)
+            .then(r=>r.json())
+            .then(r=>{
+                const [a,b] = Comment.from(r,5,set);
+                p.comments = a;
+                return Promise.all(b);
+            }
+        ));
+        do{
+            promises = (await Promise.all(promises)).filter(p=>p.then);
+        }while(promises.length);
+        //await Promise.all(promises);
+        set(posts);
+        console.log('finished',posts);
     }
 }
 // id serial primary key,
@@ -68,19 +86,33 @@ export class Post{
 // postDate timestamp NOT NULL DEFAULT NOW()
 export class Comment{
     constructor(id, body = [], userId, comments = [], postDate = ''){
-        if(!body.length) Object.assign(this,id);
-        else Object.assign(this, {id, body, userId, comments, postDate});
-        body = Content.parse(body, this);
+        if(!body.length) Object.assign(this,{body:[],comments:[]},id);
+        else Object.assign(this,{body:[],comments:[]}, {id, body, userId, comments, postDate});
+        this.body = Content.parse(this.body, this);
     }
-    get render(){
-        return (
-            <div className='comment-container'>
-                {this.body.map(c=>c.value)}
+    render(I){
+        console.log('attempting to render comment ',this.id,this.body);
+        return [
+            <div className='comment-container' key={I}>
+                {this.body.map((c,i)=>c.render(i))}
                 <div className='comment-chain'>
-                    {this.comments.map(c=>c.value)}
+                    {this.comments.map((c,i)=>c.render(i))}
                 </div>
             </div>
-        )
+        ]
+    }
+    static from(a, i, set){
+        if(--i<0)return [];
+        let comments = a.map(b=>new Comment(b));
+        var promises = comments.map(c=>fetch(`${api}/comments/comments/${c.id}`)
+            .then(r=>r.json())
+            .then(r=>{
+                console.log('loaded a comment at level ',i)
+                const [a,b]=Comment.from(r,i);
+                c.comments = a;
+                if(b)return Promise.all(b);
+            }));
+        return [comments, promises]
     }
 }
 export class Content{
@@ -96,8 +128,8 @@ export class Content{
     static parse(val,parent){
         if(Array.isArray(val))return val.map(a=>Content.parse(a,parent));
         let match = val.match(/(\[(.*?)\]\((.*?)\))/);
-        console.log('found match',match);
-        if(match && match.length > 1)return new Content(val[1], 'img', val[0],parent);
+        // console.log('found match',match);
+        if(match && match.length > 1)return new Content(match[3], 'img', match[4],parent);
         else return new Content(val,'text','hi',parent);
     }
 

@@ -14,9 +14,10 @@ export default props=>{
         
         fetch('http://localhost:2999/posts')
         .then(r=>r.json())
-        .then(r=>setPosts(Post.from(r)))
+        .then(r=>Post.from(r,setPosts))
     },[]);
     // 
+    console.log(posts);
     return (
         <div className='home main-container'>
             { addPost ? 
