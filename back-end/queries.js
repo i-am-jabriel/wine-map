@@ -39,13 +39,21 @@ exports.getJoin = (a,b) => (req,res)=>{
 // insert into comments(userId, body) values(1,array['filling the database']);
 // insert into commentsPosts(parentId, childId) values(2,currval('comments_id_seq'));
 
+//let query = `insert into ${a}(${keys.join(',')}) values(${vals.join(',')});${b?`insert into ${a}${b}(parentid,childid) values(${id},currval('${a}_id_seq'));`:null}`;
+const encode = a =>{
+    if(Array.isArray(a))return `array['${a.join("' , '")}']`;
+    if(typeof a == 'string')return `'${a}'`;
+    return a;
+}
+
 exports.post = (a, b) => (req,res) =>{
     let id = req.params.id || obj.parentid || obj.id;
     let obj = req.body;
     let keys = Object.keys(obj);
-    let vals = keys.map(a=>obj[a]);
+    let vals = keys.map(a=>encode(obj[a]));
     let query = `insert into ${a}(${keys.join(',')}) values(${vals.join(',')});${b?`insert into ${a}${b}(parentid,childid) values(${id},currval('${a}_id_seq'));`:null}`;
     pool.query(query, e => {
+        if(e)console.log(query);
         if(e)throw e;
         pool.query(`select * from ${a} order by id desc limit 1`, (e,results) => {
             if(e)throw e;

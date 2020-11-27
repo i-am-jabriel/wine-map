@@ -15,7 +15,7 @@
     align-items: center;
 }
 .content-post{
-    padding:1em 2em 4em;
+    padding:3em 3em 6em;
     border:1px solid black;
     width:35em;
     margin-bottom:3em;
@@ -53,9 +53,49 @@
 }
 .comment-container::before{
     content:'>';
+    color:darkred;
     position: absolute;
     left:20px;
 }
 .comment-options span{
     cursor: pointer;
+}
+.post-like-count{
+    font-size:1.5em;
+    padding:.25em;
+    background:rgba(0,0,0,0);
+    width:100%;
+}
+.post-like-count span{
+    cursor: pointer;
+}
+.reply-container{
+    margin:20px 0;
+}
+.reply-content{
+    width:100%;
+}
+.reply-content>*{
+    width:50%;
+    height:160px;
+    cursor: pointer;
+}
+.reply-content>div{
+    cursor: default;
+}
+.reply-buttons button{
+    margin:5px 20px;
+}
+.reply-preview{
+    position: relative;
+}
+.preview-contents{
+    overflow-y: auto;
+    height:100%;
+    font-size:0.8em;
+    margin-top:-30px;
+}
+.preview-title{
+    position: absolute;
+    top:-80px;
 }

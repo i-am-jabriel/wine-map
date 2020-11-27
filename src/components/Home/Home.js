@@ -6,7 +6,13 @@ import { Post, User } from "../Helper";
 
 
 export default props=>{
-    if(!window.corktaint)window.corktaint={refresh:()=>window.corktaint.setPage(Post.render(window.corktaint.user,window.corktaint.posts))};
+    if(!window.corktaint)window.corktaint={
+        refresh:()=>{
+            window.corktaint.setPage(Post.render(window.corktaint.user,window.corktaint.posts));
+            console.log('refreshing');
+        },
+        reply:null
+    };
     const [users, setUsers] = useState([]);
     const [user, setUser]  = useState(null)
     const [addPost, setAddPost] = useState(false);
