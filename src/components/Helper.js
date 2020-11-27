@@ -34,13 +34,15 @@ export class Post{
         Post.posts[id] = this;
     }
     static posts = [];
-    render(user,I){
+    render(user){
+        var like = this.likes.find(l=>l.userid==this.userid);
         console.log('individual post #',this.id,' with ',this.comments.length,'comments');
         return (
             <div className='content-post col' key={this.id}>
                 <div className='col post-container'>
                     {this.body.map((c,i)=>c.render(i))}
                 </div>
+                <p className='post-like-count' onClick={()=>like?this.unlike():this.like()}>{this.likes.length} {like?<>❤️</>:<>♡</>} </p>
                 <div className='post-comments'>
                     {this.comments.length?
                         this.comments.map((c,i)=>c.render(user,i)):
@@ -70,6 +72,7 @@ export class Post{
             .then(r=>{
                 const [a,b] = Comment.from(r,5);
                 p.comments = a;
+                a.forEach(aa=>aa.parent = p);
                 return Promise.all(b);
             }
         )).concat(posts.map(p=>Like.getLikesFor(p)));
@@ -93,7 +96,7 @@ export class Comment{
         if(!body.length) Object.assign(this,id);
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
-        ['like','unlike','edit','destroy'].forEach(f=>this[f]=this[f].bind(this));
+        ['like','unlike','edit','destroy','reply'].forEach(f=>this[f]=this[f].bind(this));
     }
     render(user){
         var like = this.likes.find(l=>l.userid==this.userid);
@@ -105,11 +108,13 @@ export class Comment{
                 <div className='comment-options'>
                     { !like ?
                         <><span onClick={()=>this.like(user)}>Like</span> | </>:
-                        <><span onClick={()=>this.unlike(user,like)}>Unlike</span> |</>
-                    }{ user.id == this.userid || user.admin ?
+                        <><span onClick={()=>this.unlike(like)}>Unlike</span> | </>
+                    }
+                    <span onClick={()=>this.reply()}> Reply</span> |
+                    { user.id == this.userid || user.admin ?
                         <>
                             <span onClick={()=>this.edit(user)}> Edit</span> | 
-                            <span onClick={()=>this.destroy(user)} > Delete</span>
+                            <span onClick={()=>this.destroy()} > Delete</span>
                         </>:null
                     }    
                 </div>          
@@ -119,28 +124,23 @@ export class Comment{
             </div>
         ]
     }
-    unlike(user,like){
+    unlike(like){
+        console.log('unliking');
         fetch(`${api}/likes/${like.id}`,{method:'DELETE'})
             .then(r=>{
-                this.likes = this.likes.splice(this.likes.indexOf(like),1);
-                window.corktaint.setPosts(window.corktaint.posts);
+                this.likes.splice(this.likes.findIndex(a=>a.id==like.id),1);
+                window.corktaint.refresh();
             })
     }
+    reply(){}
     like(user){
-        console.log({userid:user.id});
         fetch(`${api}/likes/comments/${this.id}`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({userid:user.id})
-        }).then(r=>{
-            console.log(r);
-            return r.json()})
-        .then(r=>{
-            console.log(r)
+        }).then(r=>r.json()).then(r=>{
             this.likes = this.likes.concat(r);
-            console.log(this.likes);
-            debugger;
-            window.corktaint.setPosts(window.corktaint.posts);
+            window.corktaint.refresh();
         });
 
     }
@@ -148,6 +148,11 @@ export class Comment{
 
     }
     destroy(){
+        fetch(`${api}/comments/${this.id}`,{method:'delete'})
+            .then(r=>{
+                this.parent.comments.splice(this.parent.comments.indexOf(this),1);
+                window.corktaint.refresh();
+            });
     }
     static from(a, i, set){
         if(--i<0)return [];
@@ -157,6 +162,7 @@ export class Comment{
             .then(r=>{
                 const [a,b]=Comment.from(r,i);
                 c.comments = a || [];
+                c.comments.forEach(cc=>cc.parent=c);
                 if(b)return Promise.all(b);
             })).concat(comments.map(c=>Like.getLikesFor(c)));
         return [comments, promises]
