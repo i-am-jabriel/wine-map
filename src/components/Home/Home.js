@@ -1,5 +1,5 @@
-import {Fab} from "@material-ui/core";
-import { Edit, Add } from "@material-ui/icons"
+import {Fab, Tooltip} from "@material-ui/core";
+import { Edit, Add, Image, Map } from "@material-ui/icons"
 import { useEffect, useState } from "react";
 import { Post, User, api } from "../Helper";
 import Reply from '../Reply/Reply';
@@ -17,14 +17,25 @@ export default props=>{
         },
         reply:null
     };
-    const button1 ={
-        to:{bottom:150,left:60,opacity:1},
-        from:{bottom:60,left:0,opacity:0},
+    const button ={
+        length:120,
+        to:{bottom:0,left:150,opacity:1},
+        from:{bottom:60,left:0,opacity:0,pointerEvents:'none'},
         config:{duration:5000},
-        onStart:()=>console.log('starting animation'),
-        onRest:()=>console.log('animation finished')
+        count:4,
+        getTo:function(i){
+            return {
+                opacity:1,
+                left:this.length * Math.cos(Math.PI * i / this.count),
+                bottom:this.length * Math.sin(Math.PI * i / this.count) + 60,
+                pointerEvents:'all'
+            }
+        }
     }
-    const [newPostButton, setNewPostButton] = useSpring(()=>({bottom:60,left:0,opacity:0}));
+    const [newPostButton, setNewPostButton] = useSpring(()=>button.from);
+    const [newImageButton, setNewImageButton] = useSpring(()=>button.from);
+    const [newMapButton, setNewMapButton] = useSpring(()=>button.from);
+
     const [users, setUsers] = useState([]);
     const [user, setUser]  = useState(null)
     const [moreButtons, setMoreButtons] = useState(false);
@@ -47,11 +58,15 @@ export default props=>{
     
     const showButtons = () =>{
         setMoreButtons(true);
-        setNewPostButton(button1.to);
+        setNewPostButton(button.getTo(2));
+        setNewImageButton(button.getTo(1));
+        setNewMapButton(button.getTo(3));
     }
     const hideButtons = () => {
         setMoreButtons(false);
-        setNewPostButton(button1.from);
+        setNewPostButton(button.from);
+        setNewImageButton(button.from);
+        setNewMapButton(button.from);
     }
     console.log('about to render papge');
     return (
@@ -63,10 +78,18 @@ export default props=>{
                     </Fab>
                     {moreButtons ? ' ':'.'}
                     {/* {moreButtons? */}
-                        <animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={()=>{
+                        <Tooltip title='New Post' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={()=>{
                             window.corktaint.reply=home;
                             window.corktaint.refresh();
-                        }} ><Edit/></Fab></animated.div>
+                        }} ><Edit/></Fab></animated.div></Tooltip>
+                        <Tooltip title='Upload Gallery' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newImageButton}><Fab color='secondary' onClick={()=>{
+                            window.corktaint.reply=home;
+                            window.corktaint.refresh();
+                        }} ><Image/></Fab></animated.div></Tooltip>
+                        <Tooltip title='Submit Review' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newMapButton}><Fab color='secondary' onClick={()=>{
+                            window.corktaint.reply=home;
+                            window.corktaint.refresh();
+                        }} ><Map/></Fab></animated.div></Tooltip>
                         {/* :null} */}
                 </div></div>
              }

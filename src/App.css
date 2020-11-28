@@ -25,9 +25,9 @@
     position: absolute;
     /* bottom:60px; */
 }
-.main-button .hover-button.disabled{
+/* .main-button .hover-button.disabled{
     pointer-events: none;
-}
+} */
 .content-post,.reply-wrapper{
     width:40em;
 }
@@ -67,6 +67,7 @@
     padding-right:80px!important;
     margin-top:-10px;
 }
+.post-credit p{margin:0;}
 .post-comments{
     width:100%;
 }
@@ -99,8 +100,12 @@
     background:rgba(0,0,0,0);
     width:100%;
 }
-.post-like-count span{
+.post-like-count span,.comment-like-count{
     cursor: pointer;
+}
+.post-reply-button>*{
+    width:40px!important;
+    height:40px!important;
 }
 .reply-container{
     margin:20px 0;

@@ -1,8 +1,14 @@
-import { Fab } from "@material-ui/core";
+import { Fab, Tooltip } from "@material-ui/core";
 import { Add } from "@material-ui/icons"
 import Reply from "./Reply/Reply";
+import Rating from '@material-ui/lab/Rating';
 
 export const api = 'http://localhost:2999';
+// export const sqlDateToJavascript = n => new Date(Date.UTC(...n.split(/[- :]/))).toString();
+export const sqlDateToJavascript = n =>{
+    let d = new Date(n);
+    return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+}
 export const parseBody = body =>
     [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x));
 // CREATE TABLE users (
@@ -49,13 +55,13 @@ export class Post{
                 <div className='col post-container'>
                     {this.body.map((c,i)=>c.render(i))}
                 </div>
-                <p className='post-credit'>- {window.corktaint.user.name}</p>
+                <div className='post-credit'><p>- {window.corktaint.user.name}</p><p>{sqlDateToJavascript(this.postdate)}</p></div>
                 <div className='post-like-count' >
                     <span onClick={()=>like?Like.deleteLike(like,this):Like.likeObj(this)}>{this.likes.length} {like?<>❤️</>:<>♡</>}</span>
                     {window.corktaint.reply==this?<Reply/>:
-                    <span className='row'><Fab color='primary' onClick={()=>{window.corktaint.reply=this;window.corktaint.refresh()}}>
+                    <span className='row post-reply-button'><Tooltip title='Reply' placement='top'><Fab color='primary' onClick={()=>{window.corktaint.reply=this;window.corktaint.refresh()}}>
                         <Add/>
-                    </Fab></span>
+                    </Fab></Tooltip></span>
                     }
                 </div>
                 <div className='post-comments'>
@@ -119,7 +125,7 @@ export class Comment{
         return [
             <div className='comment-container' key={this.id}>
                 {this.body.map((c,i)=>c.render(i))}
-                {this.likes.length ? <p className='comment-like-count'>{this.likes.length} ❤️</p> : null}
+                {this.likes.length ? <p className='comment-like-count' onClick={like?()=>this.unlikeClick(like):this.likeClick}>{this.likes.length} ❤️</p> : null}
                 <div className='comment-options'>
                     { !like ?
                         <><span onClick={()=>this.likeClick(user)}>Like</span> | </>:
@@ -231,15 +237,17 @@ export class Content{
     }
     render(i){
         // console.log('content #'+this.id+' needs value');
-        return this.type == 'text' ?
-            (<p className='content content-text' key={i}>{this.content}</p>):
-            (<img className='content content-img' src={this.content} alt={this.title||''} key={i}/>)
+        switch(this.type){
+            case 'rating':return <Rating value={this.content} precision={0.1} readOnly={true}/>
+            case 'img':return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
+            case 'text':default:return <p className='content content-text' key={i}>{this.content}</p>
+        }
     }
     static parse(val,parent){
         if(Array.isArray(val))return val.map(a=>Content.parse(a,parent));
-        let match = val.match(/(\[(.*?)\]\((.*?)\))/);
-        // console.log('found match',match);
-        if(match && match.length > 1)return new Content(match[3], 'img', match[4],parent,val);
+        let match = (val.match(/(\[(.*?)\]\((.*?)\))/)||[]).slice(2);
+        if(match)console.log(match);
+        if(match && match.length > 1)return new Content(match[1], match[0], match[0],parent,val);
         else return new Content(val,'text','hi',parent,val);
     }
     static toBody(a){

@@ -74,6 +74,7 @@ exports.delete = (a) => (req,res) =>{
     let id = req.params.id || obj.parentid || obj.id;
     let q = `delete from ${a} where id=${id}`;
     pool.query(q,e=>{
+        if(e,q)
         if(e)throw(e);
         res.status(200).json({response:true});
     });
