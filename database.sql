@@ -14,6 +14,8 @@ CREATE TABLE posts(
   id serial primary key,
   postType VARCHAR(32),
   broadcast varchar(32) default 'Public',
+  score int,
+  trend json default '{"hour":0,"day":0,"week":0,"month":0,"year":0}',
   body text[],
   title varchar(80),
   postDate timestamp NOT NULL DEFAULT NOW(),
@@ -25,6 +27,8 @@ CREATE TABLE comments (
   id serial primary key,
   broadcast varchar(32) default 'Public',
   body text[],
+  score int,
+  trend json default '{"hour":0,"day":0,"week":0,"month":0,"year":0}',
   userId int NOT NULL,
   FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
   postDate timestamp NOT NULL DEFAULT NOW()

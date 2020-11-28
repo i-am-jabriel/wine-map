@@ -17,6 +17,7 @@ export class User{
     constructor(id, name, email, achievements, score){
         if(!name) Object.assign(this,id);
         else Object.assign(this, {id, name, email, achievements, score});
+        User[this.id] = this;
     }
     static users = [];
     static from(a){
@@ -37,7 +38,7 @@ export class Post{
         else Object.assign(this,{comments:[],body:[]},{id, userId,title,comments,body,postDate});
         this.body = Content.parse(this.body);
         // console.log(arguments);
-        Post.posts[id] = this;
+        Post.posts[this.id] = this;
     }
     static posts = []
     render(user){
@@ -48,6 +49,7 @@ export class Post{
                 <div className='col post-container'>
                     {this.body.map((c,i)=>c.render(i))}
                 </div>
+                <p className='post-credit'>- {window.corktaint.user.name}</p>
                 <div className='post-like-count' >
                     <span onClick={()=>like?Like.deleteLike(like,this):Like.likeObj(this)}>{this.likes.length} {like?<>❤️</>:<>♡</>}</span>
                     {window.corktaint.reply==this?<Reply/>:
@@ -109,7 +111,7 @@ export class Comment{
         if(!body.length) Object.assign(this,id);
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
-        ['like','unlike','edit','destroy','reply'].forEach(f=>this[f]=this[f].bind(this));
+        ['likeClick','unlikeClick','editClick','destroy','replyClick'].forEach(f=>this[f]=this[f].bind(this));
     }
     render(user){
         var like = this.likes.find(l=>l.userid==this.userid);
@@ -120,36 +122,38 @@ export class Comment{
                 {this.likes.length ? <p className='comment-like-count'>{this.likes.length} ❤️</p> : null}
                 <div className='comment-options'>
                     { !like ?
-                        <><span onClick={()=>this.like(user)}>Like</span> | </>:
-                        <><span onClick={()=>this.unlike(like)}>Unlike</span> | </>
+                        <><span onClick={()=>this.likeClick(user)}>Like</span> | </>:
+                        <><span onClick={()=>this.unlikeClick(like)}>Unlike</span> | </>
                     }
-                    <span onClick={()=>this.reply()}> Reply</span> |
+                    <span onClick={()=>this.replyClick()}> Reply</span> |
                     { user.id == this.userid || user.admin ?
                         <>
-                            <span onClick={()=>this.edit(user)}> Edit</span> | 
+                            <span onClick={()=>this.editClick(user)}> Edit</span> | 
                             <span onClick={()=>this.destroy()} > Delete</span>
                         </>:null
                     }    
                 </div>
-                { window.corktaint.reply==this?<Reply/>:null}     
+                { window.corktaint.reply==this?<Reply value={this.replyMode=='reply'?null:Content.fullValues(this.body).join('\n')}/>:null}
                 <div className='comment-chain'>
                     {this.comments.map((c)=>c.render(user))}
                 </div>
             </div>
         ]
     }
-    unlike(like){
+    unlikeClick(like){
         Like.deleteLike(like,this);
     }
-    reply(){
+    replyClick(){
         window.corktaint.reply=window.corktaint.reply!=this?this:null;
+        this.replyMode = 'reply';
         window.corktaint.refresh();
     }
-    like(user){
+    likeClick(user){
         Like.likeObj(this);
     }
-    edit(){
+    editClick(){
         window.corktaint.reply=window.corktaint.reply!=this?this:null;
+        this.replyMode = 'edit';
         window.corktaint.refresh();
     }
     destroy(){
@@ -158,6 +162,13 @@ export class Comment{
                 this.parent.comments.splice(this.parent.comments.indexOf(this),1);
                 window.corktaint.refresh();
             });
+    }
+    async edit(body){
+        return fetch(`${api}/comments/${this.id}`,{
+            method:'put',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({body})
+        }).then(()=>this.body = Content.parse(body));
     }
     static from(a, i, set){
         if(--i<0)return [];
@@ -178,7 +189,9 @@ export class Comment{
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body,userid:window.corktaint.user.id})
         }).then(r=>r.json()).then(r=>{
-            obj.comments.push(new Comment(r[0]));
+            var c=new Comment(r[0]);
+            c.parent=obj;
+            obj.comments.push(c);
             return 1;
         });
     }
@@ -194,7 +207,8 @@ export class Like{
             .then(r=>obj.likes=r);
     }
     static likeObj(obj){
-        return fetch(`${api}/likes/${obj.constructor.name}s/${obj.id}`,{
+        console.log(`${api}/likes/${obj.constructor.name}s/${obj.id}`);
+        return fetch(`${api}/likes/${obj.constructor.name.toLowerCase()}s/${obj.id}`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({userid:window.corktaint.user.id})
@@ -212,8 +226,8 @@ export class Like{
     }
 }
 export class Content{
-    constructor(content, type = 'text', title, parent){
-        Object.assign(this, {content, type, title, parent});
+    constructor(content, type = 'text', title, parent, fullValue){
+        Object.assign(this, {content, type, title, parent, fullValue});
     }
     render(i){
         // console.log('content #'+this.id+' needs value');
@@ -225,13 +239,13 @@ export class Content{
         if(Array.isArray(val))return val.map(a=>Content.parse(a,parent));
         let match = val.match(/(\[(.*?)\]\((.*?)\))/);
         // console.log('found match',match);
-        if(match && match.length > 1)return new Content(match[3], 'img', match[4],parent);
-        else return new Content(val,'text','hi',parent);
+        if(match && match.length > 1)return new Content(match[3], 'img', match[4],parent,val);
+        else return new Content(val,'text','hi',parent,val);
     }
     static toBody(a){
         return a.map(b=>b.content);
     }
-
+    static fullValues(a){ return a.map(b=>b.fullValue)}
 }
 
 /*export const abe = new User(0,'Abe Johnson');

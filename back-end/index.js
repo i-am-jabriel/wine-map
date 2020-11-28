@@ -18,6 +18,7 @@ main.forEach(a=>{
     app.post(`/comments/${a}/:id`, db.post('comments', a));
 });
 mainLikes.forEach(a=>{
+    app.put(`/${a}/:id`, db.put(a));
     app.post(`/${a}/:id`, db.post(a));
     app.delete(`/${a}/:id`, db.delete(a));
 })
@@ -26,6 +27,17 @@ main.forEach(a=>{
     app.post(`/likes/${a}/:id`, db.post('likes', a));
     app.get(`/likes/${a}/:id`, db.getJoin('likes',a));
 });
+
+app.get('/user/:userid/feed/:a/:id/:b/:trend/:page', db.getFeedForUser);
+app.get('/user/:userid/feed/:a/:id/:b/:trend/', db.getFeedForUser);
+app.get('/user/:userid/feed/:a/:id/:b', db.getFeedForUser);
+app.get('/user/:userid/feed/:type/:page', db.getFeedForUser);
+app.get('/user/:userid/feed/:type', db.getFeedForUser);
+app.get('/user/:userid/feed', db.getFeedForUser);
+app.get('/feed/:type/:trend', db.getFeed);
+app.get('/feed/:type/:trend', db.getFeed);
+app.get('/feed/:type', db.getFeed);
+app.get('/feed', db.getFeed);
 // app.get('/users',db.get('users'));
 // app.get('/posts',db.get('users'));
 app.listen(port,()=>console.log('hi'));

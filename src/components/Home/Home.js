@@ -1,10 +1,14 @@
 import {Fab} from "@material-ui/core";
-import { Edit } from "@material-ui/icons"
+import { Edit, Add } from "@material-ui/icons"
 import { useEffect, useState } from "react";
-import { Post, User } from "../Helper";
+import { Post, User, api } from "../Helper";
+import Reply from '../Reply/Reply';
+import {useSpring, animated, config} from 'react-spring'
 
 
 
+
+const home = {name:'Home',postMode:true};
 export default props=>{
     if(!window.corktaint)window.corktaint={
         refresh:()=>{
@@ -13,13 +17,21 @@ export default props=>{
         },
         reply:null
     };
+    const button1 ={
+        to:{bottom:150,left:60,opacity:1},
+        from:{bottom:60,left:0,opacity:0},
+        config:{duration:5000},
+        onStart:()=>console.log('starting animation'),
+        onRest:()=>console.log('animation finished')
+    }
+    const [newPostButton, setNewPostButton] = useSpring(()=>({bottom:60,left:0,opacity:0}));
     const [users, setUsers] = useState([]);
     const [user, setUser]  = useState(null)
-    const [addPost, setAddPost] = useState(false);
+    const [moreButtons, setMoreButtons] = useState(false);
     let [posts, setPosts] = useState([]);
     let [page, setPage] = useState(<></>);
     useEffect(()=>{
-        fetch('http://localhost:2999/users')
+        fetch(`${api}/users`)
         .then(r=>r.json())
         .then(r=>User.from(r))
         .then(r=>{
@@ -27,36 +39,38 @@ export default props=>{
             setUser(r[0]);
             return true;
         })
-        .then(r=>fetch('http://localhost:2999/posts'))
+        .then(r=>fetch(`${api}/user/1/feed`))
         .then(r=>r.json())
         .then(r=>Post.from(r))
     },[]);
     Object.assign(window.corktaint,{posts,setPage, setPosts, user, users});
     
-    // 
+    const showButtons = () =>{
+        setMoreButtons(true);
+        setNewPostButton(button1.to);
+    }
+    const hideButtons = () => {
+        setMoreButtons(false);
+        setNewPostButton(button1.from);
+    }
     console.log('about to render papge');
     return (
         <div className='home main-container col'>
-            { addPost ? 
-                (
-                    <div className='new-post-container col'>
-                        <input id='new-post-title' placeholder='Title' />
-                        <textarea id='new-post-body' placeholder='Share something!'/>
-                        
-                        <button onClick={()=>{
-                            let post = Post.createPostFrom(document.getElementById('new-post-title').value,document.getElementById('new-post-body').value);
-                            setPosts(posts.concat([post]));
-                        }}>Submit</button>
-                    </div>
-                    ):
-                    <div className='row'>
-                        <Fab color="secondary" aria-label="edit" onClick={(()=>setAddPost(true))}>
-                            <Edit />
-                        </Fab>
-                    </div>
+            { window.corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:
+                <div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>
+                    <Fab color="primary" aria-label="add" onClick={showButtons} onMouseEnter={showButtons}>
+                        <Add />
+                    </Fab>
+                    {moreButtons ? ' ':'.'}
+                    {/* {moreButtons? */}
+                        <animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={()=>{
+                            window.corktaint.reply=home;
+                            window.corktaint.refresh();
+                        }} ><Edit/></Fab></animated.div>
+                        {/* :null} */}
+                </div></div>
              }
            { page }
-            {/* { users.length ? Post.render(users[0],posts):null} */}
         </div>
     )
 }
