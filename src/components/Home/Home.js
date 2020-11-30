@@ -8,7 +8,7 @@ import {useSpring, animated, config} from 'react-spring'
 
 
 
-const home = {name:'Home',postMode:true};
+const home = {name:'Home',isPost:true};
 export default props=>{
     if(!window.corktaint)window.corktaint={
         refresh:()=>{
@@ -68,28 +68,23 @@ export default props=>{
         setNewImageButton(button.from);
         setNewMapButton(button.from);
     }
-    console.log('about to render papge');
+    console.log('about to render page');
+    const showPost = () =>{
+        window.corktaint.reply=home;
+        window.corktaint.refresh();
+    }
     return (
         <div className='home main-container col'>
             { window.corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:
                 <div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>
-                    <Fab color="primary" aria-label="add" onClick={showButtons} onMouseEnter={showButtons}>
+                    <Fab color="primary" aria-label="add" onClick={moreButtons?showPost:showButtons} onMouseEnter={showButtons}>
                         <Add />
                     </Fab>
                     {moreButtons ? ' ':'.'}
                     {/* {moreButtons? */}
-                        <Tooltip title='New Post' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={()=>{
-                            window.corktaint.reply=home;
-                            window.corktaint.refresh();
-                        }} ><Edit/></Fab></animated.div></Tooltip>
-                        <Tooltip title='Upload Gallery' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newImageButton}><Fab color='secondary' onClick={()=>{
-                            window.corktaint.reply=home;
-                            window.corktaint.refresh();
-                        }} ><Image/></Fab></animated.div></Tooltip>
-                        <Tooltip title='Submit Review' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newMapButton}><Fab color='secondary' onClick={()=>{
-                            window.corktaint.reply=home;
-                            window.corktaint.refresh();
-                        }} ><Map/></Fab></animated.div></Tooltip>
+                        <Tooltip title='New Post' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={showPost} ><Edit/></Fab></animated.div></Tooltip>
+                        <Tooltip title='Upload Gallery' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newImageButton}><Fab color='secondary' onClick={showPost} ><Image/></Fab></animated.div></Tooltip>
+                        <Tooltip title='Submit Review' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newMapButton}><Fab color='secondary' onClick={showPost} ><Map/></Fab></animated.div></Tooltip>
                         {/* :null} */}
                 </div></div>
              }

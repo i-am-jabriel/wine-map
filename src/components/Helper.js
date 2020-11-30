@@ -2,6 +2,7 @@ import { Fab, Tooltip } from "@material-ui/core";
 import { Add } from "@material-ui/icons"
 import Reply from "./Reply/Reply";
 import Rating from '@material-ui/lab/Rating';
+import Chip from '@material-ui/core/Chip';
 
 export const api = 'http://localhost:2999';
 // export const sqlDateToJavascript = n => new Date(Date.UTC(...n.split(/[- :]/))).toString();
@@ -40,8 +41,9 @@ export class User{
 // FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
 export class Post{
     constructor(id,userId,title,body = [], comments=[],postDate){
-        if(!userId) Object.assign(this,{comments:[],body:[]},id);
-        else Object.assign(this,{comments:[],body:[]},{id, userId,title,comments,body,postDate});
+        Object.assign(this,{comments:[],body:[],likes:[]});
+        if(!userId) Object.assign(this,id);
+        else Object.assign(this,{id, userId,title,comments,body,postDate});
         this.body = Content.parse(this.body);
         // console.log(arguments);
         Post.posts[this.id] = this;
@@ -49,7 +51,7 @@ export class Post{
     static posts = []
     render(user){
         var like = this.likes.find(l=>l.userid==this.userid);
-        console.log('individual post #',this.id,' with ',this.comments.length,'comments','is replying?',window.corktaint.reply==this);
+        //console.log('individual post #',this.id,' with ',this.comments.length,'comments','is replying?',window.corktaint.reply==this);
         return (
             <div className='content-post col' key={this.id}>
                 <div className='col post-container'>
@@ -67,14 +69,13 @@ export class Post{
                 <div className='post-comments'>
                     {this.comments.length?
                         this.comments.map((c,i)=>c.render(user,i)):
-                        <p>No Comments Yet...{this.comments.length}</p>
+                        <p>No Comments Yet...</p>
                     }
                 </div>
             </div>
         )
     }
     static render(user,posts){
-        console.log('starting page render');
         window.corktaint.setPosts(posts);
         return (
             <div className='content-posts col wrap'>
@@ -85,6 +86,26 @@ export class Post{
     static createPostFrom(userid,title,body){
         // console.log('creating post at',Post.posts.length, title, body);
         return new Post(Post.posts.length, userid, title, parseBody(body));
+    }
+    static submitNewPost(title,body){
+        return fetch(`${api}/posts`,{
+            method:'post',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({userid:window.corktaint.user.id,body,title}),
+        }).then(r=>r.json()).then(r=>{
+            console.log(r);
+            window.corktaint.posts.push(new Post(r));
+            console.log(window.corktaint.posts[window.corktaint.posts.length-1]);
+            window.corktaint.reply = null;
+            window.corktaint.refresh();
+        })
+    }
+    destroy(){
+        fetch(`${api}/posts/${this.id}`,{method:'delete'})
+            .then(r=>{
+                window.corktaint.posts.splice(this.id,1);
+                window.corktaint.refresh();
+            });
     }
     static async from(a){
         let posts = a.map(b=>new Post(b));
@@ -174,7 +195,11 @@ export class Comment{
             method:'put',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body})
-        }).then(()=>this.body = Content.parse(body));
+        }).then(()=>this.body = Content.parse(body))
+        .then(r=>{
+            window.corktaint.reply = null;
+            window.corktaint.refresh();
+        });
     }
     static from(a, i, set){
         if(--i<0)return [];
@@ -197,8 +222,10 @@ export class Comment{
         }).then(r=>r.json()).then(r=>{
             var c=new Comment(r[0]);
             c.parent=obj;
-            obj.comments.push(c);
-            return 1;
+            return obj.comments.push(c);
+        }).then(r=>{
+            window.corktaint.reply = null;
+            window.corktaint.refresh();
         });
     }
 }
@@ -238,7 +265,8 @@ export class Content{
     render(i){
         // console.log('content #'+this.id+' needs value');
         switch(this.type){
-            case 'rating':return <Rating value={this.content} precision={0.1} readOnly={true}/>
+            case 'rating':return <Rating value={this.content} precision={0.1} readOnly={true} size='small'/>
+            case 'tags':return this.content.split(',').map(c=><Chip label={c} variant='outlined' className='post-tag'/>)
             case 'img':return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
             case 'text':default:return <p className='content content-text' key={i}>{this.content}</p>
         }
@@ -246,8 +274,7 @@ export class Content{
     static parse(val,parent){
         if(Array.isArray(val))return val.map(a=>Content.parse(a,parent));
         let match = (val.match(/(\[(.*?)\]\((.*?)\))/)||[]).slice(2);
-        if(match)console.log(match);
-        if(match && match.length > 1)return new Content(match[1], match[0], match[0],parent,val);
+        if(match.length > 1)return new Content(match[1], match[0], match[0],parent,val);
         else return new Content(val,'text','hi',parent,val);
     }
     static toBody(a){

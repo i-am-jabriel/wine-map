@@ -3,6 +3,7 @@ import './App.css';
 import {Switch, Route, BrowserRouter as Router} from 'react-router-dom';
 import Home from './components/Home/Home';
 import Navbar from './components/Navbar/Navbar';
+import SingleUser from './components/SingleUser/SingleUser';
 
 
 function App() {
@@ -14,8 +15,7 @@ function App() {
                 <Route path="/about">
                 {/* <About /> */}
                 </Route>
-                <Route path="/users">
-                {/* <Users /> */}
+                <Route path="/user/:id" children={<SingleUser/>}>
                 </Route>
                 <Route path="/">
                 <Home />

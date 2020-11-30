@@ -55,16 +55,17 @@ const encode = a =>{
 }
 
 exports.post = (a, b) => (req,res) =>{
-    let id = req.params.id || obj.parentid || obj.id;
     let obj = req.body;
+    let id = req.params.id || obj.parentid || obj.id;
     let keys = Object.keys(obj);
     let vals = keys.map(a=>encode(obj[a]));
-    let query = `insert into ${a}(${keys.join(',')}) values(${vals.join(',')});${b?`insert into ${a}${b}(parentid,childid) values(${id},currval('${a}_id_seq'));`:null}`;
+    let query = `insert into ${a}(${keys.join(',')}) values(${vals.join(',')});${b?`insert into ${a}${b}(parentid,childid) values(${id},currval('${a}_id_seq'));`:''}`;
     pool.query(query, e => {
-        if(e)console.log(query);
         if(e)throw e;
-        pool.query(`select * from ${a} order by id desc limit 1`, (e,results) => {
+        if(e)console.log(query);
+        pool.query(query=`select * from ${a} order by id desc fetch next row only`, (e,results) => {
             if(e)throw e;
+            if(e)console.log(query);
             res.status(200).json(results.rows);
         });
     });

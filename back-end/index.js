@@ -12,7 +12,10 @@ app.get('/', (request, response) => {
 });
 const main = ['users','posts','comments'];
 const mainLikes = main.concat(['likes']);
-mainLikes.forEach(a=>app.get(`/${a}`, db.get(a)));
+mainLikes.forEach(a=>{
+    app.get(`/${a}`, db.get(a))
+    app.post(`/${a}`,db.post(a))
+});
 main.forEach(a=>{
     app.get(`/comments/${a}/:id`, db.getJoin('comments',a));
     app.post(`/comments/${a}/:id`, db.post('comments', a));
