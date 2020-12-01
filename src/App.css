@@ -14,6 +14,10 @@
     flex-direction: column;
     align-items: center;
 }
+.login-container{
+    padding:60px 0;
+}
+
 .main-button-hover{
     padding:50px;
 }

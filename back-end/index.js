@@ -19,8 +19,10 @@ mainLikes.forEach(a=>{
 main.forEach(a=>{
     app.get(`/comments/${a}/:id`, db.getJoin('comments',a));
     app.post(`/comments/${a}/:id`, db.post('comments', a));
+    if(a!='users')app.get(`/user/:userid/${a}`, db.getWhere(a,{userid:null}))
 });
 mainLikes.forEach(a=>{
+    app.get(`/${a}/:id`, db.get(a));
     app.put(`/${a}/:id`, db.put(a));
     app.post(`/${a}/:id`, db.post(a));
     app.delete(`/${a}/:id`, db.delete(a));
@@ -31,6 +33,7 @@ main.forEach(a=>{
     app.get(`/likes/${a}/:id`, db.getJoin('likes',a));
 });
 
+app.get('/userWithEmail/:email', db.getWhere('users',{email:null}))
 app.get('/user/:userid/feed/:a/:id/:b/:trend/:page', db.getFeedForUser);
 app.get('/user/:userid/feed/:a/:id/:b/:trend/', db.getFeedForUser);
 app.get('/user/:userid/feed/:a/:id/:b', db.getFeedForUser);

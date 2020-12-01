@@ -1,7 +1,7 @@
 import {Fab, Tooltip} from "@material-ui/core";
 import { Edit, Add, Image, Map } from "@material-ui/icons"
 import { useEffect, useState } from "react";
-import { Post, User, api } from "../Helper";
+import { Post, User, api, corktaint } from "../Helper";
 import Reply from '../Reply/Reply';
 import {useSpring, animated, config} from 'react-spring'
 
@@ -9,14 +9,7 @@ import {useSpring, animated, config} from 'react-spring'
 
 
 const home = {name:'Home',isPost:true};
-export default props=>{
-    if(!window.corktaint)window.corktaint={
-        refresh:()=>{
-            window.corktaint.setPage(Post.render(window.corktaint.user,window.corktaint.posts));
-            console.log('refreshing');
-        },
-        reply:null
-    };
+export default function Home(props){
     const button ={
         length:120,
         to:{bottom:0,left:150,opacity:1},
@@ -35,26 +28,24 @@ export default props=>{
     const [newPostButton, setNewPostButton] = useSpring(()=>button.from);
     const [newImageButton, setNewImageButton] = useSpring(()=>button.from);
     const [newMapButton, setNewMapButton] = useSpring(()=>button.from);
-
-    const [users, setUsers] = useState([]);
-    const [user, setUser]  = useState(null)
     const [moreButtons, setMoreButtons] = useState(false);
     let [posts, setPosts] = useState([]);
     let [page, setPage] = useState(<></>);
     useEffect(()=>{
-        fetch(`${api}/users`)
-        .then(r=>r.json())
-        .then(r=>User.from(r))
-        .then(r=>{
-            setUsers(r)
-            setUser(r[0]);
-            return true;
-        })
-        .then(r=>fetch(`${api}/user/1/feed`))
+        // fetch(`${api}/users`)
+        // .then(r=>r.json())
+        // .then(r=>User.from(r))
+        // .then(r=>{
+        //     setUsers(r)
+        //     setUser(r[0]);
+        //     return true;
+        // })
+        // .then(r=>
+        fetch(`${api}/user/1/feed`)
         .then(r=>r.json())
         .then(r=>Post.from(r))
     },[]);
-    Object.assign(window.corktaint,{posts,setPage, setPosts, user, users});
+    Object.assign(corktaint,{posts,setPage, setPosts});
     
     const showButtons = () =>{
         setMoreButtons(true);
@@ -70,12 +61,12 @@ export default props=>{
     }
     console.log('about to render page');
     const showPost = () =>{
-        window.corktaint.reply=home;
-        window.corktaint.refresh();
+        corktaint.reply=home;
+        corktaint.refresh();
     }
     return (
         <div className='home main-container col'>
-            { window.corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:
+            { corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:
                 <div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>
                     <Fab color="primary" aria-label="add" onClick={moreButtons?showPost:showButtons} onMouseEnter={showButtons}>
                         <Add />

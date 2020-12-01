@@ -16,7 +16,10 @@ exports.get = (...names) => (req, res) =>{
 }
 
 exports.getWhere = (names, conds) => (req, res) =>{
-    pool.query(`select * from ${names.join(',')} where ${Object.keys(conds).map(a=>`${a} = ${conds[a]}`).join(' and ')}`,(error, results) =>{
+    if(!Array.isArray(names))names=[names];
+    let q = `select * from ${names.join(',')} where ${Object.keys(conds).map(a=>`${a} = ${encode(conds[a]||req.params[a])}`).join(' and ')}`;
+    pool.query(q,(error, results) =>{
+        if(error)console.log(q);
         if(error)throw error;
         res.status(200).json(results.rows);
     });
