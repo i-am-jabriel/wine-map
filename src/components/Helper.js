@@ -1,17 +1,9 @@
-import { Fab, Tooltip } from "@material-ui/core";
-import { Add } from "@material-ui/icons"
+import { Button, Fab, Tooltip } from "@material-ui/core";
+import { Add, Close } from "@material-ui/icons"
 import Reply from "./Reply/Reply";
 import Rating from '@material-ui/lab/Rating';
 import Chip from '@material-ui/core/Chip';
 
-
-export const corktaint ={
-    refresh:()=>{
-        corktaint.setPage(Post.render(corktaint.user,corktaint.posts));
-        console.log('refreshing');
-    },
-    reply:null
-};
 export const api = 'http://localhost:2999';
 // export const sqlDateToJavascript = n => new Date(Date.UTC(...n.split(/[- :]/))).toString();
 export const sqlDateToJavascript = n =>{
@@ -20,38 +12,34 @@ export const sqlDateToJavascript = n =>{
 }
 export const parseBody = body =>
     [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x));
-// CREATE TABLE users (
-//     id serial primary key,
-//     name VARCHAR(32),
-//     email VARCHAR(64),
-//     last_login timestamp NOT NULL DEFAULT NOW(),
-//     achievements VARCHAR(64)[],
-//     score integer DEFAULT 0
-//   );
+export const increment = (o,i=1) => {Object.keys(o).forEach(k=>o[k]=(o[k]||0)+i);return o}
 export class User{  
     constructor(id, name, email, achievements, score){
         if(!name) Object.assign(this,id);
         else Object.assign(this, {id, name, email, achievements, score});
-        User[this.id] = this;
+        User.users[`${this.id}`] = this;
+        console.log('created new user',this.name,this.id);
     }
-    static users = [];
+    static users = {};
     static from(a){
         return a.map(b=>new User(b));
     }
-    static async getUser(id){
+    static getUser(id){
+        console.log('attempting to get user at',id,User.users[id]);
         if(User.users[id])return User.users[id];
+        console.log('downloading user')
         return fetch(`${api}/users/${id}`)
-            .then(r=>r.json()).then(r=>User.users[r.id]=new User(r))
+            .then(r=>r.json()).then(r=>new User(r[0]))
+    }
+    async changeScoreBy(i=1){
+        return fetch(`${api}/users/${this.id}`,{
+            method:'put',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
+        });
     }
 }
-// id serial primary key,
-// postType VARCHAR(32),
-// broadcast varchar(32) default 'Public',
-// body text[],a
-// title varchar(80),
-// postDate timestamp NOT NULL DEFAULT NOW(),
-// userId int NOT NULL,
-// FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+
 export class Post{
     constructor(id,userId,title,body = [], comments=[],postDate){
         Object.assign(this,{comments:[],body:[],likes:[]});
@@ -59,20 +47,26 @@ export class Post{
         else Object.assign(this,{id, userId,title,comments,body,postDate});
         this.body = Content.parse(this.body);
         // console.log(arguments);
-        Post.posts[this.id] = this;
+        Post.posts[`${this.id}`] = this;
+        ['like','unlike','destroy','clickEdit'].forEach(m=>this[m]=this[m].bind(this));
     }
-    static posts = []
-    render(user){
-        var like = this.likes.find(l=>l.userid==this.userid);
+    static posts = {};
+    render(){
+        var _like = this.likes.find(l=>l.userid==corktaint.user.id);
+        var admin = this.userid == corktaint.user.id || corktaint.user.admin;
         //console.log('individual post #',this.id,' with ',this.comments.length,'comments','is replying?',corktaint.reply==this);
         return (
             <div className='content-post col' key={this.id}>
+                {admin ? <p className='delete-post-button' onClick={this}> <Close/> </p>: null}
                 <div className='col post-container'>
-                    {this.body.map((c,i)=>c.render(i))}
+                    {corktaint.reply!=this?this.body.map((c,i)=>c.render(i)):<Reply value={Content.fullValues(this.body).join('\n')}/>}
                 </div>
-                <div className='post-credit'><p>- {User.users[this.userid]}</p><p>{sqlDateToJavascript(this.postdate)}</p></div>
+                {admin?<p className='post-edit' onClick={this.clickEdit}>Edit</p>:null}
+                <div className='post-credit'>
+                    <p>- {User.users[this.userid].name}</p><p>{sqlDateToJavascript(this.postdate)}</p>
+                    </div>
                 <div className='post-like-count' >
-                    <span onClick={()=>like?Like.deleteLike(like,this):Like.likeObj(this)}>{this.likes.length} {like?<>❤️</>:<>♡</>}</span>
+                    <span onClick={()=>!_like?this.like():this.unlike(_like)}>{this.likes.length} {_like?<>❤️</>:<>♡</>}</span>
                     {corktaint.reply==this?<Reply/>:
                     <span className='row post-reply-button'><Tooltip title='Reply' placement='top'><Fab color='primary' onClick={()=>{corktaint.reply=this;corktaint.refresh()}}>
                         <Add/>
@@ -81,37 +75,39 @@ export class Post{
                 </div>
                 <div className='post-comments'>
                     {this.comments.length?
-                        this.comments.map((c,i)=>c.render(user,i)):
+                        this.comments.map((c,i)=>c.render(i)):
                         <p>No Comments Yet...</p>
                     }
                 </div>
             </div>
         )
     }
-    static render(user,posts){
-        corktaint.setPosts(posts);
+    like(){
+        debugger;
+        Like.likeObj(this); 
+        User.users[this.userid].changeScoreBy(1);
+    }
+    unlike(like){
+        Like.deleteLike(like,this);
+        User.users[this.userid].changeScoreBy(-1);
+    }
+    clickEdit(){
+        this.replyMode = 'edit';
+        corktaint.reply=this;
+        corktaint.refresh();
+    }
+    static render(posts){
+        //corktaint.setPosts(posts);
+        corktaint.posts = posts;
         return (
             <div className='content-posts col wrap'>
-                {posts.map(p=>p.render(user))}
+                {posts.map(p=>p.render())}
             </div>
         )
     }
     static createPostFrom(userid,title,body){
         // console.log('creating post at',Post.posts.length, title, body);
         return new Post(Post.posts.length, userid, title, parseBody(body));
-    }
-    static submitNewPost(title,body){
-        return fetch(`${api}/posts`,{
-            method:'post',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({userid:corktaint.user.id,body,title}),
-        }).then(r=>r.json()).then(r=>{
-            console.log(r);
-            corktaint.posts.push(new Post(r));
-            console.log(corktaint.posts[corktaint.posts.length-1]);
-            corktaint.reply = null;
-            corktaint.refresh();
-        })
     }
     destroy(){
         fetch(`${api}/posts/${this.id}`,{method:'delete'})
@@ -120,23 +116,52 @@ export class Post{
                 corktaint.refresh();
             });
     }
-    static async from(a){
-        let posts = a.map(b=>new Post(b));
-        var promises = posts.map(p=>fetch(`${api}/comments/posts/${p.id}`)
+    edit(body){
+        return fetch(`${api}/comments/${this.id}`,{
+            method:'put',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({body})
+        }).then(()=>this.body = Content.parse(body))
+        .then(r=>{
+            corktaint.reply = null;
+            corktaint.refresh();
+        });
+    }
+    static submitNewPost(title,body){
+        return fetch(`${api}/posts`,{
+            method:'post',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({userid:corktaint.user.id,body,title}),
+        }).then(r=>r.json()).then(r=>{
+            corktaint.posts.push(new Post(r[0]));
+            // console.log(corktaint.posts[corktaint.posts.length-1]);
+            corktaint.reply = null;
+            corktaint.refresh();
+        })
+    }
+    getComments(){
+        if(this.commentsLoaded)return;
+        return fetch(`${api}/comments/posts/${this.id}`)
             .then(r=>r.json())
             .then(r=>{
                 const [a,b] = Comment.from(r,5);
-                p.comments = a;
-                a.forEach(aa=>aa.parent = p);
+                this.comments = a;
+                a.forEach(aa=>aa.parent = this);
+                this.commentsLoaded=true;
                 return Promise.all(b);
             }
-        )).concat(posts.map(p=>Like.getLikesFor(p)),posts.map(p=>User.getUser(p.userid)));
+        );
+    }
+    static async from(a){
+        let posts = a.map(b=>Post.posts[b.id]||new Post(b));
+        var promises = posts.map(p=>p.getComments()).concat(posts.map(p=>Like.getLikesFor(p))).concat(posts.map(p=>User.getUser(p.userid)));
         do{
             promises = (await Promise.all(promises)).filter(p=>p.then);
         }
         while(promises.length);
-        console.log('finished',posts,corktaint);
-        corktaint.setPage(Post.render(corktaint.user,posts));
+        console.log('finished promises',posts,corktaint,User.users);
+        corktaint.posts=posts;
+        corktaint.refresh();
     }
 }
 // id serial primary key,
@@ -151,25 +176,25 @@ export class Comment{
         if(!body.length) Object.assign(this,id);
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
-        ['likeClick','unlikeClick','editClick','destroy','replyClick'].forEach(f=>this[f]=this[f].bind(this));
+        ['like','unlike','clickEdit','destroy','reply'].forEach(f=>this[f]=this[f].bind(this));
     }
     render(){
-        var like = this.likes.find(l=>l.userid==this.userid);
+        var _like = this.likes.find(l=>l.userid==corktaint.user.id);
         // console.log(this.body,this.comments);
         return [
             <div className='comment-container' key={this.id}>
                 {this.body.map((c,i)=>c.render(i))}
-                {this.likes.length ? <p className='comment-like-count' onClick={like?()=>this.unlikeClick(like):this.likeClick}>{this.likes.length} ❤️</p> : null}
+                {this.likes.length ? <p className='comment-like-count' onClick={_like?()=>this.unlike(_like):this.like}>{this.likes.length} ❤️</p> : null}
                 <div className='comment-options'>
-                    { !like ?
-                        <><span onClick={()=>this.likeClick()}>Like</span> | </>:
-                        <><span onClick={()=>this.unlikeClick(like)}>Unlike</span> | </>
+                    { !_like ?
+                        <><span onClick={this.like}>Like</span> | </>:
+                        <><span onClick={()=>this.unlike(_like)}>Unlike</span> | </>
                     }
-                    <span onClick={()=>this.replyClick()}> Reply</span> |
+                    <span onClick={()=>this.reply()}> Reply</span> |
                     { corktaint.user.id == this.userid || corktaint.user.admin ?
                         <>
-                            <span onClick={()=>this.editClick()}> Edit</span> | 
-                            <span onClick={()=>this.destroy()} > Delete</span>
+                            <span onClick={this.clickEdit}> Edit</span> | 
+                            <span onClick={this.destroy} > Delete</span>
                         </>:null
                     }    
                 </div>
@@ -180,18 +205,20 @@ export class Comment{
             </div>
         ]
     }
-    unlikeClick(like){
+    unlike(like){
         Like.deleteLike(like,this);
+        User.users[this.userid].changeScoreBy(-1);
     }
-    replyClick(){
+    like(){
+        Like.likeObj(this);
+        User.users[this.userid].changeScoreBy(1);
+    }
+    reply(){
         corktaint.reply=corktaint.reply!=this?this:null;
         this.replyMode = 'reply';
         corktaint.refresh();
     }
-    likeClick(){
-        Like.likeObj(this);
-    }
-    editClick(){
+    clickEdit(){
         corktaint.reply=corktaint.reply!=this?this:null;
         this.replyMode = 'edit';
         corktaint.refresh();
@@ -203,7 +230,7 @@ export class Comment{
                 corktaint.refresh();
             });
     }
-    async edit(body){
+    edit(body){
         return fetch(`${api}/comments/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
@@ -253,7 +280,8 @@ export class Like{
             .then(r=>obj.likes=r);
     }
     static likeObj(obj){
-        console.log(`${api}/likes/${obj.constructor.name}s/${obj.id}`);
+        console.log('firing like on ',obj,obj.id);
+        debugger;
         return fetch(`${api}/likes/${obj.constructor.name.toLowerCase()}s/${obj.id}`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
@@ -264,6 +292,7 @@ export class Like{
         });
     }
     static deleteLike(like,obj){
+        console.log('firing delete like on',obj,obj.id);
         return fetch(`${api}/likes/${like.id}`,{method:'DELETE'})
             .then(r=>{
                 obj.likes.splice(obj.likes.findIndex(a=>a.id==like.id),1);
@@ -278,8 +307,8 @@ export class Content{
     render(i){
         // console.log('content #'+this.id+' needs value');
         switch(this.type){
-            case 'rating':return <Rating value={this.content} precision={0.1} readOnly={true} size='small'/>
-            case 'tags':return this.content.split(',').map(c=><Chip label={c} variant='outlined' className='post-tag'/>)
+            case 'rating':return <Rating value={this.content} precision={0.1} readOnly={true} size='small' key={i}/>
+            case 'tags':return this.content.split(',').map((c,i)=><Chip key={i} label={c} variant='outlined' className='post-tag'/>)
             case 'img':return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
             case 'text':default:return <p className='content content-text' key={i}>{this.content}</p>
         }
@@ -296,9 +325,14 @@ export class Content{
     static fullValues(a){ return a.map(b=>b.fullValue)}
 }
 
-/*export const abe = new User(0,'Abe Johnson');
-
-export const firstPost = new Post(Post.posts.length, abe,'This is my first post',[new Content('Here is my first content post'),new Content('It is filled with information'),new Content('https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true','img','wine'), new Content('Ex Dee')]);
-export const p2 = new Post(Post.posts.length, abe,'This is my second post',[new Content('Here is my first content post'),new Content('It is filled with information'),new Content('https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true','img','wine'), new Content('Ex Dee')]);
-export const p3 = new Post(Post.posts.length, abe,'This is my third post',[new Content('Here is my first content post'),new Content('It is filled with information'),new Content('https://s3-cdn.withwine.com/Wine/zrLjkNQrhk2dPco2FplGNg.png?h=256&autorotate=true','img','wine'), new Content('Ex Dee')]);
-*/
+export const corktaint ={
+    refresh:()=>{
+        console.log('refreshing',corktaint.user,User.users);
+        corktaint.setPage(Post.render(corktaint.posts));
+    },
+    reply:null,
+    posts:[],
+    User,
+    Post
+};
+window.corktaint=corktaint;

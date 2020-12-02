@@ -1,4 +1,4 @@
-import {Fab, Tooltip} from "@material-ui/core";
+import {Fab, Tooltip, useRadioGroup} from "@material-ui/core";
 import { Edit, Add, Image, Map } from "@material-ui/icons"
 import { useEffect, useState } from "react";
 import { Post, User, api, corktaint } from "../Helper";
@@ -29,7 +29,6 @@ export default function Home(props){
     const [newImageButton, setNewImageButton] = useSpring(()=>button.from);
     const [newMapButton, setNewMapButton] = useSpring(()=>button.from);
     const [moreButtons, setMoreButtons] = useState(false);
-    let [posts, setPosts] = useState([]);
     let [page, setPage] = useState(<></>);
     useEffect(()=>{
         // fetch(`${api}/users`)
@@ -45,7 +44,9 @@ export default function Home(props){
         .then(r=>r.json())
         .then(r=>Post.from(r))
     },[]);
-    Object.assign(corktaint,{posts,setPage, setPosts});
+    useEffect(()=>{
+        Object.assign(corktaint,{setPage}); 
+    },[page]);
     
     const showButtons = () =>{
         setMoreButtons(true);

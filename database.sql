@@ -5,7 +5,9 @@ CREATE TABLE users (
   id serial primary key,
   name VARCHAR(32),
   email VARCHAR(64),
-  last_login timestamp NOT NULL DEFAULT NOW(),
+  admin boolean default false,
+  lastaction timestamp NOT NULL DEFAULT NOW(),
+  trend json default '{"hour":0,"day":0,"week":0,"month":0,"year":0}',
   achievements VARCHAR(64)[],
   score integer DEFAULT 0
 );

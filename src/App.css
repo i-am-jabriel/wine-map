@@ -17,6 +17,9 @@
 .login-container{
     padding:60px 0;
 }
+.sign-up-form input{
+    width:250px;
+}
 
 .main-button-hover{
     padding:50px;
@@ -64,6 +67,13 @@
 .post-container img{
     max-width:100%;
     max-height:500px;
+}
+.post-edit{
+    width:100%;
+    position: relative;
+    top:-20px;
+    margin-bottom:-20px;
+    cursor: pointer;
 }
 .post-credit{
     width:100%;
