@@ -13,7 +13,7 @@ function App() {
   return !user?<Login setUser={setUser}/>:
            <Router>
         <div className="App col">
-            <Navbar />
+            <Navbar/>
             <Switch>
                 <Route path="/about">
                 {/* <About /> */}

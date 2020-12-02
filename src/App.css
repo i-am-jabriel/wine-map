@@ -48,12 +48,6 @@
     padding:10px 5px;
     word-wrap: break-word;
 }
-.navbar{
-    position:fixed;
-    width:100%;
-    background:#296;
-    height:40px;
-}
 .main-container{
     padding:40px 0 120px;
 }

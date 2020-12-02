@@ -85,7 +85,25 @@ create table likesComments(
     parentId int,
     foreign key(parentId) references comments(id) on delete CASCADE
 );
-
+create table groups(
+    id serial primary key,
+    name text,
+    members int[] NOT NULL
+);
+create table messages(
+    id serial primary key,
+    groupid int,
+    foreign key(groupid) references groups(id) on delete cascade,
+    userid int,
+    foreign key(userid) references users(id) on delete cascade,
+    body text[]
+);
+create table notifications(
+    id serial primary key,
+    userid int,
+    foreign key(userid) references users(id) on delete cascade,
+    message text
+);
 
 insert into users (email,name) values ('officialjabe@gmail.com','Abe Johnson');
 insert into posts(userId,title,body) values(1,'my first post',array['this is my first post','it is filled with content','rejoice']);

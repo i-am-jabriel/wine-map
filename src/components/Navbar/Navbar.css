@@ -1,0 +1,26 @@
+.navbar{
+    position:fixed;
+    width:100%;
+    background:#296;
+    height:50px;
+    align-items: center;
+}
+.navbar span, .navbar svg, .navbar .MuiAvatar-root{
+    cursor: pointer;
+    opacity:.8;
+    transition:all .3s ease;
+}
+.navbar span:hover, .navbar svg:hover, .navbar .MuiAvatar-root:hover{
+    opacity:1;
+    color:white;
+}
+.nav-right{
+    margin-left:auto;
+    margin-right:20px;
+}
+.navbar .MuiAvatar-root, .navbar svg{
+    margin-right:20px;
+}
+.navbar svg{
+    height:40px;
+}

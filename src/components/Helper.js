@@ -83,7 +83,6 @@ export class Post{
         )
     }
     like(){
-        debugger;
         Like.likeObj(this); 
         User.users[this.userid].changeScoreBy(1);
     }
