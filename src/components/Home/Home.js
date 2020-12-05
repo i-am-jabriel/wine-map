@@ -6,6 +6,7 @@ import Reply from '../Reply/Reply';
 import {useSpring, animated, config} from 'react-spring';
 import WineMap from '../WineMap/WineMap';
 import {Switch, Route, BrowserRouter as Router} from 'react-router-dom';
+import Leaderboard from "../Leaderboard/Leaderboard";
 
 const home = {name:'Home',isPost:true};
 export function newPost(){
@@ -88,6 +89,7 @@ export default function Home(props){
                     {page}</>}
             </Route>
             <Route path='/map'> <WineMap/> </Route>
+            <Route path='/leaderboard'><Leaderboard/></Route>
             </Switch>
         </div>
     )

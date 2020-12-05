@@ -1,0 +1,16 @@
+.leaderboard-container{
+    margin-top:60px;
+    border:1px solid black;
+    border-radius:5px;
+    text-align:left;
+    padding:40px 0 80px;
+}
+.leaderboard-row{
+    width:100%;
+}
+.leaderboard-row p{
+    width:200px;
+}
+.leaderboard-row:nth-child(2){
+    background-color:#ddd;
+}

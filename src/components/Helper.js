@@ -24,10 +24,8 @@ export class User{
     static from(a){
         return a.map(b=>new User(b));
     }
-    static getUser(id){
-        console.log('attempting to get user at',id,User.users[id]);
+    static get(id){
         if(User.users[id])return User.users[id];
-        console.log('downloading user')
         return fetch(`${api}/users/${id}`)
             .then(r=>r.json()).then(r=>new User(r[0]))
     }
@@ -81,6 +79,11 @@ export class Post{
                 </div>
             </div>
         )
+    }
+    static get(id){
+        if(Post.posts[id])return Post.posts[id];
+        return fetch(`${api}/post/${id}`)
+            .then(r=>r.json()).then(r=>new Post(r[0]))
     }
     like(){
         Like.likeObj(this); 
@@ -153,7 +156,7 @@ export class Post{
     }
     static async from(a){
         let posts = a.map(b=>Post.posts[b.id]||new Post(b));
-        var promises = posts.map(p=>p.getComments()).concat(posts.map(p=>Like.getLikesFor(p))).concat(posts.map(p=>User.getUser(p.userid)));
+        var promises = posts.map(p=>p.getComments()).concat(posts.map(p=>Like.getLikesFor(p))).concat(posts.map(p=>User.get(p.userid)));
         do{
             promises = (await Promise.all(promises)).filter(p=>p&&p.then);
         }
@@ -176,6 +179,13 @@ export class Comment{
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
         ['like','unlike','clickEdit','destroy','reply'].forEach(f=>this[f]=this[f].bind(this));
+        comments[this.id] = this;
+    }
+    static comments = {};
+    static get(id){
+        if(Comment.comments[id])return Comment.comments[id];
+        return fetch(`${api}/comments/${id}`)
+            .then(r=>r.json()).then(r=>new Comment(r[0]))
     }
     render(){
         var _like = this.likes.find(l=>l.userid==corktaint.user.id);
@@ -323,7 +333,18 @@ export class Content{
     }
     static fullValues(a){ return a.map(b=>b.fullValue)}
 }
-
+export class Cookie{
+    static set(key, value, date){
+        document.cookie = `${key}=${value};expires=${date.toUTCString()}`;
+    }
+    static get(key){
+        let entry = document.cookie.split(';').find(c=>c.includes(key));
+        return entry?entry.split('=')[1]:null;
+    }
+    static delete(key){
+        document.cookie = `${key}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
+    }
+}
 export const corktaint ={
     refresh:()=>{
         console.log('refreshing',corktaint.user,User.users);
