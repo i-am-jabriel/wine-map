@@ -11,21 +11,12 @@ import { useState } from 'react';
 function App() {
     const [user,setUser] = useState(null);
   return !user?<Login setUser={setUser}/>:
-           <Router>
         <div className="App col">
+            <Router>
             <Navbar/>
-            <Switch>
-                <Route path="/about">
-                {/* <About /> */}
-                </Route>
-                <Route path="/user/:id" children={<SingleUser/>}>
-                </Route>
-                <Route path="/">
-                <Home />
-                </Route>
-            </Switch>
+            <Home/>
+            </Router>
         </div>
-        </Router>
 }
 
 export default App;

@@ -1,14 +1,17 @@
-import {Fab, Tooltip, useRadioGroup} from "@material-ui/core";
+import {Fab, Tooltip} from "@material-ui/core";
 import { Edit, Add, Image, Map } from "@material-ui/icons"
 import { useEffect, useState } from "react";
 import { Post, User, api, corktaint } from "../Helper";
 import Reply from '../Reply/Reply';
-import {useSpring, animated, config} from 'react-spring'
-
-
-
+import {useSpring, animated, config} from 'react-spring';
+import WineMap from '../WineMap/WineMap';
+import {Switch, Route, BrowserRouter as Router} from 'react-router-dom';
 
 const home = {name:'Home',isPost:true};
+export function newPost(){
+    corktaint.reply = home;
+    corktaint.refresh();
+}
 export default function Home(props){
     const button ={
         length:120,
@@ -29,6 +32,7 @@ export default function Home(props){
     const [newImageButton, setNewImageButton] = useSpring(()=>button.from);
     const [newMapButton, setNewMapButton] = useSpring(()=>button.from);
     const [moreButtons, setMoreButtons] = useState(false);
+    const {view, setView} = props;
     let [page, setPage] = useState(<></>);
     useEffect(()=>{
         // fetch(`${api}/users`)
@@ -66,21 +70,25 @@ export default function Home(props){
         corktaint.refresh();
     }
     return (
-        <div className='home main-container col'>
-            { corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:
-                <div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>
-                    <Fab color="primary" aria-label="add" onClick={moreButtons?showPost:showButtons} onMouseEnter={showButtons}>
-                        <Add />
-                    </Fab>
-                    {moreButtons ? ' ':'.'}
-                    {/* {moreButtons? */}
-                        <Tooltip title='New Post' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={showPost} ><Edit/></Fab></animated.div></Tooltip>
-                        <Tooltip title='Upload Gallery' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newImageButton}><Fab color='secondary' onClick={showPost} ><Image/></Fab></animated.div></Tooltip>
-                        <Tooltip title='Submit Review' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newMapButton}><Fab color='secondary' onClick={showPost} ><Map/></Fab></animated.div></Tooltip>
-                        {/* :null} */}
-                </div></div>
-             }
-           { page }
+        <div className='home main-container col' name='New Post'>
+            <Switch>
+                <Route exact path='/'>
+                 {corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:
+                    <><div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>
+                        <Fab color="primary" aria-label="add" onClick={moreButtons?showPost:showButtons} onMouseEnter={showButtons}>
+                            <Add />
+                        </Fab>
+                        {moreButtons ? ' ':'.'}
+                        {/* {moreButtons? */}
+                            <Tooltip title='New Post' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newPostButton}><Fab color='secondary' onClick={showPost} ><Edit/></Fab></animated.div></Tooltip>
+                            <Tooltip title='Upload Gallery' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newImageButton}><Fab color='secondary' onClick={showPost} ><Image/></Fab></animated.div></Tooltip>
+                            <Tooltip title='Submit Review' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newMapButton}><Fab color='secondary' onClick={showPost} ><Map/></Fab></animated.div></Tooltip>
+                            {/* :null} */}
+                    </div></div>
+                    {page}</>}
+            </Route>
+            <Route path='/map'> <WineMap/> </Route>
+            </Switch>
         </div>
     )
 }

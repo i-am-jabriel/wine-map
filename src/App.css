@@ -87,12 +87,12 @@
     position: relative;
 }
 .comment-container::before{
-    content:'-';
+    content:'[-] ';
     color:darkturquoise;
     font-size:16px;
     transform:grayscale(0);
     position: absolute;
-    left:30px;
+    left:20px;
     top:5px;
 }
 .comment-options span{

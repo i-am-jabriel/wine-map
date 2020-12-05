@@ -4,23 +4,33 @@
     background:#296;
     height:50px;
     align-items: center;
+    flex:1;
+    justify-self: flex-start;
 }
 .navbar span, .navbar svg, .navbar .MuiAvatar-root{
     cursor: pointer;
     opacity:.8;
     transition:all .3s ease;
+    color:black;
 }
-.navbar span:hover, .navbar svg:hover, .navbar .MuiAvatar-root:hover{
+.navbar span:hover, .navbar svg:hover, .navbar .MuiAvatar-root:hover,.navbar .active, .navbar .active svg{
     opacity:1;
     color:white;
 }
+.nav-middle{
+    position: relative;
+    position: relative;
+    left:80px;
+}
 .nav-right{
     margin-left:auto;
-    margin-right:20px;
+}
+.nav-left{
+    margin-right:auto;
 }
 .navbar .MuiAvatar-root, .navbar svg{
-    margin-right:20px;
+    margin-right:16px;
 }
 .navbar svg{
-    height:40px;
+    height:54px;
 }

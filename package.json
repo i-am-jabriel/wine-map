@@ -17,6 +17,8 @@
     "react-google-login": "^5.1.25",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.1",
+    "react-scroll": "^1.8.1",
+    "react-simple-maps": "^2.3.0",
     "react-spring": "^8.0.27",
     "react-tooltip": "^4.2.11",
     "web-vitals": "^0.2.4"

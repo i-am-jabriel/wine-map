@@ -102,7 +102,14 @@ create table notifications(
     id serial primary key,
     userid int,
     foreign key(userid) references users(id) on delete cascade,
-    message text
+    message text,
+    url text
+);
+create table images(
+    id serial primary key,
+    img bytea not null,
+    userid int,
+    foreign key(userid) references users(id) on delete cascade
 );
 
 insert into users (email,name) values ('officialjabe@gmail.com','Abe Johnson');
@@ -122,3 +129,5 @@ insert into commentsPosts(parentId, childId) values(1,currval('comments_id_seq')
 
 insert into comments(userId, body) values(1,array['filling the database']);
 insert into commentsPosts(parentId, childId) values(2,currval('comments_id_seq'));
+
+insert into images(userid,img) values(1, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8 w38GIAXDIBKE0DHxgljNBAAO 9TXL0Y4OHwAAAABJRU5ErkJggg=='))

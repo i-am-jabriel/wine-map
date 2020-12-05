@@ -155,7 +155,7 @@ export class Post{
         let posts = a.map(b=>Post.posts[b.id]||new Post(b));
         var promises = posts.map(p=>p.getComments()).concat(posts.map(p=>Like.getLikesFor(p))).concat(posts.map(p=>User.getUser(p.userid)));
         do{
-            promises = (await Promise.all(promises)).filter(p=>p.then);
+            promises = (await Promise.all(promises)).filter(p=>p&&p.then);
         }
         while(promises.length);
         console.log('finished promises',posts,corktaint,User.users);
