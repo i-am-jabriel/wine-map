@@ -10,7 +10,8 @@
 }
 .leaderboard-row p{
     width:200px;
+    padding-left:20px;
 }
-.leaderboard-row:nth-child(2){
+.leaderboard-row:nth-child(odd){
     background-color:#ddd;
 }

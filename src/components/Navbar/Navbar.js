@@ -5,7 +5,7 @@ import './Navbar.css';
 import { Avatar, Tooltip } from '@material-ui/core';
 import { corktaint } from '../Helper';
 import { Link } from 'react-scroll';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link as RouteLink } from 'react-router-dom';
 import {newPost} from '../Home/Home';
 
 
@@ -23,10 +23,11 @@ export default props => {
                 <Tooltip title='Leaderboard'><NavLink to='/leaderboard'><ScoreTwoTone className={view=='Leaderboard'?'active':''}/></NavLink></Tooltip>
             </div>
             <div className='nav-right row'>
-                {corktaint.user?<Tooltip title={corktaint.user.name}><Avatar>{corktaint.user.name[0]}</Avatar></Tooltip>:null}
+                {corktaint.user?
+                    <RouteLink to={`/user/${corktaint.user.id}`}><Tooltip title={corktaint.user.name}><Avatar>{corktaint.user.name[0]}</Avatar></Tooltip></RouteLink>:null}
                 <Tooltip title='New Post'><Link to='New Post' smooth={true} onClick={newPost}><NoteAddTwoTone/></Link></Tooltip>
-                <Tooltip title='Send DM'><MmsTwoTone className='open-messages-button' onClick={()=>navbarModal?setClose(true):setNavbarModal('messenger')}/></Tooltip>
-                <Tooltip title='Notifications'><NotificationsTwoTone/></Tooltip>
+                <Tooltip title='Send DM'><MmsTwoTone className='open-messages-button' onClick={()=>navbarModal=='messenger'?setClose(true):setNavbarModal('messenger')}/></Tooltip>
+                <Tooltip title='Notifications'><NotificationsTwoTone onClick={()=>navbarModal=='notification'?setClose(true):setNavbarModal('notification')}/></Tooltip>
                 <Tooltip title='Account'><ExpandMore/></Tooltip>
             </div>
             {navbarModal?<NavbarModal type={navbarModal} close={close} onClose={()=>{setNavbarModal(false);setClose(false)}}/>:null}

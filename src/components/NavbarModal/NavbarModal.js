@@ -5,7 +5,8 @@ import { corktaint } from "../Helper";
 import './NavbarModal.css';
 
 const types ={
-    messenger:{name:'Messenger',bottom:'10%'}
+    messenger:{name:'Messenger',bottom:'10%'},
+    notification:{name:'Notifications',bottom:'40%'}
 }
 export default function NavbarModal(props){
     const obj = types[props.type];
@@ -15,7 +16,7 @@ export default function NavbarModal(props){
         setAnim({bottom:'100%'});
         window.setTimeout(()=>props.onClose(),500);
     }
-    useEffect(()=>setAnim({bottom:obj.bottom}),[])
+    useEffect(()=>setAnim({bottom:obj.bottom}),[props.type])
     return <animated.div className='navbar-modal-container col' style={anim}>
         {props.close?close():null}
         <div className='navbar-modal-header row' onClick={close}>

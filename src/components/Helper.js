@@ -3,6 +3,7 @@ import { Add, Close } from "@material-ui/icons"
 import Reply from "./Reply/Reply";
 import Rating from '@material-ui/lab/Rating';
 import Chip from '@material-ui/core/Chip';
+import {Link} from 'react-router-dom';
 
 export const api = 'http://localhost:2999';
 // export const sqlDateToJavascript = n => new Date(Date.UTC(...n.split(/[- :]/))).toString();
@@ -10,6 +11,7 @@ export const sqlDateToJavascript = n =>{
     let d = new Date(n);
     return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
 }
+export const trim = (s, i=40)=> s.length<i?s:s.substr(0,37)+'...';
 export const parseBody = body =>
     [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x));
 export const increment = (o,i=1) => {Object.keys(o).forEach(k=>o[k]=(o[k]||0)+i);return o}
@@ -61,7 +63,7 @@ export class Post{
                 </div>
                 {admin?<p className='post-edit' onClick={this.clickEdit}>Edit</p>:null}
                 <div className='post-credit'>
-                    <p>- {User.users[this.userid].name}</p><p>{sqlDateToJavascript(this.postdate)}</p>
+                    <Link to={`/user/${this.userid}`}><p>- {User.users[this.userid].name}</p></Link><p>{sqlDateToJavascript(this.postdate)}</p>
                     </div>
                 <div className='post-like-count' >
                     <span onClick={()=>!_like?this.like():this.unlike(_like)}>{this.likes.length} {_like?<>❤️</>:<>♡</>}</span>
@@ -85,6 +87,16 @@ export class Post{
         return fetch(`${api}/post/${id}`)
             .then(r=>r.json()).then(r=>new Post(r[0]))
     }
+    static render(posts){
+        //corktaint.setPosts(posts);
+        corktaint.posts = posts;
+        return (
+            <div className='content-posts col wrap'>
+                {posts.map(p=>p.render())}
+            </div>
+        )
+    }
+    get desc(){return trim(Content.fullValues(this.body.slice(0,3)).join(''))}
     like(){
         Like.likeObj(this); 
         User.users[this.userid].changeScoreBy(1);
@@ -97,15 +109,6 @@ export class Post{
         this.replyMode = 'edit';
         corktaint.reply=this;
         corktaint.refresh();
-    }
-    static render(posts){
-        //corktaint.setPosts(posts);
-        corktaint.posts = posts;
-        return (
-            <div className='content-posts col wrap'>
-                {posts.map(p=>p.render())}
-            </div>
-        )
     }
     static createPostFrom(userid,title,body){
         // console.log('creating post at',Post.posts.length, title, body);
@@ -214,6 +217,7 @@ export class Comment{
             </div>
         ]
     }
+    get desc(){return trim(Content.fullValues(this.body.slice(0,3)).join(''))}
     unlike(like){
         Like.deleteLike(like,this);
         User.users[this.userid].changeScoreBy(-1);

@@ -24,6 +24,7 @@
 }
 .nav-right{
     margin-left:auto;
+    align-items:center;
 }
 .nav-left{
     margin-right:auto;
@@ -33,4 +34,7 @@
 }
 .navbar svg{
     height:54px;
+}
+.MuiAvatar-root{
+    text-decoration: none;
 }

@@ -7,6 +7,7 @@ import {useSpring, animated, config} from 'react-spring';
 import WineMap from '../WineMap/WineMap';
 import {Switch, Route, BrowserRouter as Router} from 'react-router-dom';
 import Leaderboard from "../Leaderboard/Leaderboard";
+import SingleUser from "../SingleUser/SingleUser";
 
 const home = {name:'Home',isPost:true};
 export function newPost(){
@@ -86,10 +87,12 @@ export default function Home(props){
                             <Tooltip title='Submit Review' placement='top'><animated.div className={`hover-button ${moreButtons?'':'disabled'}`} style={newMapButton}><Fab color='secondary' onClick={showPost} ><Map/></Fab></animated.div></Tooltip>
                             {/* :null} */}
                     </div></div>
-                    {page}</>}
-            </Route>
-            <Route path='/map'> <WineMap/> </Route>
-            <Route path='/leaderboard'><Leaderboard/></Route>
+                    </>}
+                {page}
+                </Route>
+                <Route path='/user/:id'><SingleUser/></Route>
+                <Route path='/map'> <WineMap/> </Route>
+                <Route path='/leaderboard'><Leaderboard/></Route>
             </Switch>
         </div>
     )

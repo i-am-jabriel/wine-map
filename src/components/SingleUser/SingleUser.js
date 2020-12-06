@@ -1,3 +1,64 @@
+import { Avatar } from '@material-ui/core';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import {api, corktaint, User, Post, Comment} from '../Helper';
+import './SingleUser.css';
 export default function SingleUser(props){
-    return (<h1>Ok</h1>)
+    const { id } = useParams();
+    const [user, setUser] = useState(null);
+    const types = ['posts','comments'];
+    const trends = ['recent','hour','day','week','month','year','all-time'];
+    const [page, setPage] = useState(1);
+    const [type, _setType] = useState(types[0]);
+    const [trend, _setTrend] = useState(trends[0]);
+    const [content, setContent] = useState([]);
+
+    const setType = e=>_setType(e.target.value);
+    const setTrend = e=>_setTrend(e.target.value);
+    const classes = {
+        posts: Post,
+        comments: Comment,
+    }
+
+    useEffect(()=>{
+        Promise.all([User.get(id)]).then(u=>setUser(u[0]));  
+    },[])
+
+    useEffect(()=>{
+        console.log('setting user to ',user);
+        console.log(type,classes[type],classes[type].get);
+        if(!user)return;
+        fetch(`${api}/feed/from/${user.id}/${type}/${trend}/${page}`)
+            .then(r=>r.json())
+            .then(r=>Promise.all(r.map(a=>classes[type].get(a.id))))
+            .then(r=>setContent(r))
+    },[type,trend,page,user])
+    return <div className='single-user-container col'>
+        <div className='user-bio row'>
+            {user?<span>
+                <Avatar variant="square" className={classes.square}>{user.name?user.name[0]:'C'}</Avatar>
+                <p>{user.name}</p>
+                <p>Score: {user.score}</p>
+                <p>{user.bio}</p>
+            </span>:null}
+        </div>
+        <div className='user-highlighted-content col'>
+            <div>
+                <select value={type} onInput={setType}>
+                    {types.map(x=><option value={x} key={x}>{x}</option>)}
+                </select>
+                Sort By: <select value={trend} onInput={setTrend}>
+                    {trends.map(x=><option value={x} key={x}>{x}</option>)}
+                </select>
+            </div>
+            <div className='user-content-container col'>
+                {content.map((x,i)=><div className='user-content-row row'>
+                    <p>{(page-1)*10+i+1} - </p>
+                    <p>{x.desc}</p>
+                    <p>{x.score}</p>
+                </div>)}
+            </div>
+            <div></div>
+        </div>
+    </div>
 }
