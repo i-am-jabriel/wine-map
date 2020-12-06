@@ -12,15 +12,17 @@ export default function Login(props){
         props.setUser(true);
     }
     const responseGoogle = r =>{
-        const date = new Date();
         const {name, givenName, familyName, email} = r.profileObj;
-        date.setDate(date.getDate() + 10);
-        Cookie.set('email',email,date);
         setEmail(email);
         setName(name || `${givenName} ${familyName}`);
         fetchUserWithEmail(email);
     }
-    const fetchUserWithEmail = email => fetch(`${api}/userWithEmail/${email}`).then(r=>r.json()).then(r=>r[0]&&setUser(r[0]));
+    const fetchUserWithEmail = email =>{
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        Cookie.set('email',email,date);
+        fetch(`${api}/userWithEmail/${email}`).then(r=>r.json()).then(r=>r[0]&&setUser(r[0]));
+    }    
 
     const submit = () => {
         fetch(`${api}/users`,{

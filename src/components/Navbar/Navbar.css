@@ -1,21 +1,23 @@
 .navbar{
     position:fixed;
     width:100%;
-    background:#296;
+    background:var(--primary-off-color);
     height:50px;
     align-items: center;
     flex:1;
     justify-self: flex-start;
+    z-index:3;
+}
+.navbar .link:hover,.navbar a:hover,.navbar .active{
+    background:rgba(180,180,180,0.4);
+    border-radius:5px;
+
 }
 .navbar span, .navbar svg, .navbar .MuiAvatar-root{
     cursor: pointer;
-    opacity:.8;
-    transition:all .3s ease;
-    color:black;
 }
 .navbar span:hover, .navbar svg:hover, .navbar .MuiAvatar-root:hover,.navbar .active, .navbar .active svg{
     opacity:1;
-    color:white;
 }
 .nav-middle{
     position: relative;
@@ -30,11 +32,8 @@
     margin-right:auto;
 }
 .navbar .MuiAvatar-root, .navbar svg{
-    margin-right:16px;
+    margin:auto 12px;
 }
 .navbar svg{
     height:54px;
-}
-.MuiAvatar-root{
-    text-decoration: none;
 }

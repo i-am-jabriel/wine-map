@@ -24,11 +24,11 @@ export default props => {
             </div>
             <div className='nav-right row'>
                 {corktaint.user?
-                    <RouteLink to={`/user/${corktaint.user.id}`}><Tooltip title={corktaint.user.name}><Avatar>{corktaint.user.name[0]}</Avatar></Tooltip></RouteLink>:null}
+                <Tooltip title={corktaint.user.name}><RouteLink to={`/user/${corktaint.user.id}`}><Avatar>{corktaint.user.name[0]}</Avatar></RouteLink></Tooltip>:null}
                 <Tooltip title='New Post'><Link to='New Post' smooth={true} onClick={newPost}><NoteAddTwoTone/></Link></Tooltip>
-                <Tooltip title='Send DM'><MmsTwoTone className='open-messages-button' onClick={()=>navbarModal=='messenger'?setClose(true):setNavbarModal('messenger')}/></Tooltip>
-                <Tooltip title='Notifications'><NotificationsTwoTone onClick={()=>navbarModal=='notification'?setClose(true):setNavbarModal('notification')}/></Tooltip>
-                <Tooltip title='Account'><ExpandMore/></Tooltip>
+                <Tooltip title='Send DM'><a><MmsTwoTone className='open-messages-button' onClick={()=>navbarModal=='messenger'?setClose(true):setNavbarModal('messenger')}/></a></Tooltip>
+                <Tooltip title='Notifications'><a><NotificationsTwoTone onClick={()=>navbarModal=='notification'?setClose(true):setNavbarModal('notification')}/></a></Tooltip>
+                <Tooltip title='Account'><a><ExpandMore/></a></Tooltip>
             </div>
             {navbarModal?<NavbarModal type={navbarModal} close={close} onClose={()=>{setNavbarModal(false);setClose(false)}}/>:null}
         </div>

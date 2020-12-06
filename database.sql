@@ -14,6 +14,8 @@ CREATE TABLE users (
 
 CREATE TABLE posts(
   id serial primary key,
+  userId int NOT NULL,
+  FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
   postType VARCHAR(32),
   broadcast varchar(32) default 'Public',
   score int,
@@ -21,19 +23,19 @@ CREATE TABLE posts(
   body text[],
   title varchar(80),
   postDate timestamp NOT NULL DEFAULT NOW(),
-  userId int NOT NULL,
-  FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+  lastaction timestamp NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE comments (
   id serial primary key,
+  userId int NOT NULL,
+  FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
   broadcast varchar(32) default 'Public',
   body text[],
   score int,
   trend json default '{"hour":0,"day":0,"week":0,"month":0,"year":0}',
-  userId int NOT NULL,
-  FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
-  postDate timestamp NOT NULL DEFAULT NOW()
+  postDate timestamp NOT NULL DEFAULT NOW(),
+  lastaction timestamp NOT NULL DEFAULT NOW()
 );
 
 create table commentsUsers(

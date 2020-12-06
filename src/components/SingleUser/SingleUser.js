@@ -33,7 +33,7 @@ export default function SingleUser(props){
             .then(r=>Promise.all(r.map(a=>classes[type].get(a.id))))
             .then(r=>setContent(r))
     },[type,trend,page,user])
-    return <div className='single-user-container col'>
+    return <div className='single-user-container container col'>
         <div className='user-bio row'>
             {user?<span>
                 <Avatar variant="square" className={classes.square}>{user.name?user.name[0]:'C'}</Avatar>
@@ -51,7 +51,7 @@ export default function SingleUser(props){
                     {trends.map(x=><option value={x} key={x}>{x}</option>)}
                 </select>
             </div>
-            <div className='user-content-container col'>
+            <div className='user-trend-content col'>
                 {content.map((x,i)=><div className='user-content-row row'>
                     <p>{(page-1)*10+i+1} - </p>
                     <p>{x.desc}</p>

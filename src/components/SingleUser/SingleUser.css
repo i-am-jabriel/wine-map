@@ -1,0 +1,23 @@
+.single-user-container{
+    margin-top:50px;
+}
+.user-trend-content .user-content-row{
+    opacity:0.6px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background:#fff;
+}
+.user-trend-content .user-content-row:hover{
+    opacity:1;
+}
+.user-trend-content .user-content-row:nth-child(even){
+    background:#ddd;
+}
+
+.user-trend-content p{
+    padding-left:10px;
+    width:200px;
+}
+.user-trend-content p:first-child{
+    width:50px;
+}

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
-import {api, Comment, Post, User} from '../Helper';
+import { Link } from "react-router-dom";
+import {api, Comment, Post, sqlDateToJavascript, User} from '../Helper';
 import './Leaderboard.css';
 
 export default function Leaderboard(){
     const [type, setType] = useState('users');
-    const [trend, setTrend] = useState('day');
+    const [trend, setTrend] = useState('week');
     const [page, setPage] = useState(1);
     const types = ['users','posts','comments'];
     const trends = ['hour','day','week','month','year'];
@@ -15,8 +16,8 @@ export default function Leaderboard(){
     }
     const cols = {
         users:['name'],
-        posts:['id'],
-        comments:['id'],
+        posts:['title','desc','postdate'],
+        comments:['desc','postdate'],
     }
 
     const [results, setResults] = useState(<></>);
@@ -28,25 +29,26 @@ export default function Leaderboard(){
                 setResults(
                     <div className='leaderboard-results col'>
                 <div className='leaderboard-header leaderboard-row row'>
-                    {cols[type].map(c=><p key={c}>{c} :</p>)}
-                    <p>score :</p>
+                    {cols[type].map(c=><p key={c}>{c}</p>)}
+                    <p>score</p>
                 </div>
-                {r.map(r=><div className='leaderboard-row row'>
-                    {cols[type].map(c=><p key={c}>{r[c]}</p>)}
+                {r.map(r=><Link to={`/${type.substring(0,type.length-1)}/${r.id}`}><div className='leaderboard-row row'>
+                    {cols[type].map(c=><p key={c}>{c!='postdate'?r[c]:sqlDateToJavascript(r[c])}</p>)}
                     <p>{r.trend[trend]}</p>
-                </div>)}
+                </div></Link>)}
             </div>
             )
             })
     ,[type,trend,page])
-    return <div className='leaderboard-container col'>
-        <div className='row'>
-            <select onInput={e=>setType(e.target.value)}>
+    return <div className='leaderboard-container container col'>
+        <h1>Leaderboard</h1>
+        <div className='row space-around leaderboard-options'>
+            <span>Top: <select onInput={e=>setType(e.target.value)}>
                 {types.map(t=><option value={t}>{t}</option>)}
-            </select>
-            <select onInput={e=>setTrend(e.target.value)}>
+            </select></span>
+            <span>Sort by: <select onInput={e=>setTrend(e.target.value)}>
                 {trends.map(t=><option value={t}>{t}</option>)}
-            </select>
+            </select></span>
         </div>
         {results}
     </div>

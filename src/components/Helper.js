@@ -84,7 +84,7 @@ export class Post{
     }
     static get(id){
         if(Post.posts[id])return Post.posts[id];
-        return fetch(`${api}/post/${id}`)
+        return fetch(`${api}/posts/${id}`)
             .then(r=>r.json()).then(r=>new Post(r[0]))
     }
     static render(posts){
@@ -100,10 +100,12 @@ export class Post{
     like(){
         Like.likeObj(this); 
         User.users[this.userid].changeScoreBy(1);
+        this.changeScoreBy(1);
     }
     unlike(like){
         Like.deleteLike(like,this);
         User.users[this.userid].changeScoreBy(-1);
+        this.changeScoreBy(-1);
     }
     clickEdit(){
         this.replyMode = 'edit';
@@ -121,8 +123,15 @@ export class Post{
                 corktaint.refresh();
             });
     }
+    async changeScoreBy(i=1){
+        return fetch(`${api}/posts/${this.id}`,{
+            method:'put',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
+        });
+    }
     edit(body){
-        return fetch(`${api}/comments/${this.id}`,{
+        return fetch(`${api}/posts/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body})
@@ -221,15 +230,24 @@ export class Comment{
     unlike(like){
         Like.deleteLike(like,this);
         User.users[this.userid].changeScoreBy(-1);
+        this.changeScoreBy(-1);
     }
     like(){
         Like.likeObj(this);
         User.users[this.userid].changeScoreBy(1);
+        this.changeScoreBy(1);
     }
     reply(){
         corktaint.reply=corktaint.reply!=this?this:null;
         this.replyMode = 'reply';
         corktaint.refresh();
+    }
+    async changeScoreBy(i=1){
+        return fetch(`${api}/comments/${this.id}`,{
+            method:'put',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
+        });
     }
     clickEdit(){
         corktaint.reply=corktaint.reply!=this?this:null;
