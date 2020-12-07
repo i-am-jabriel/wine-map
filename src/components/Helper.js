@@ -4,10 +4,12 @@ import Reply from "./Reply/Reply";
 import Rating from '@material-ui/lab/Rating';
 import Chip from '@material-ui/core/Chip';
 import {Link} from 'react-router-dom';
+import Carousel from './Carousel/Carousel';
 import { useSpring } from "react-spring";
 
 export const api = 'http://localhost:2999';
-// export const sqlDateToJavascript = n => new Date(Date.UTC(...n.split(/[- :]/))).toString();
+export const mod = (a,b) => ((a%b)+b)%b;
+export const zero = n => n <= 9?`0${n}`:n;
 export const sqlDateToJavascript = n =>{
     let d = new Date(n);
     return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
@@ -59,9 +61,9 @@ export class Post{
         //console.log('individual post #',this.id,' with ',this.comments.length,'comments','is replying?',corktaint.reply==this);
         return (
             <div className='content-post col' key={this.id}>
-                <Tooltip title='Hide'><Fab color='primary'className='hide-post-button' onClick={this.toggleHide}><Remove/></Fab></Tooltip>
+                <Tooltip title='Hide'><Fab color='secondary'className='hide-post-button' onClick={this.toggleHide}><Remove/></Fab></Tooltip>
                 {!this.hide?<>
-                    {admin ? <Tooltip title='Delete Post'><Fab color='primary' className='delete-post-button' onClick={this.destroy}> <Close/> </Fab></Tooltip>: null}
+                    {admin ? <Tooltip title='Delete Post'><Fab color='secondary' className='delete-post-button' onClick={this.destroy}> <Close/> </Fab></Tooltip>: null}
                     <div className='col post-container'>
                         {corktaint.reply!=this?this.body.map((c,i)=>c.render(i)):<Reply value={Content.fullValues(this.body).join('\n')}/>}
                     </div>
@@ -353,7 +355,10 @@ export class Content{
         switch(this.type){
             case 'rating':return <Rating value={this.content} precision={0.1} readOnly={true} size='small' key={i}/>
             case 'tags':return this.content.split(',').map((c,i)=><Chip key={i} label={c} variant='outlined' className='post-tag'/>)
-            case 'img':return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
+            case 'img':
+                const l  = this.content.split(',');
+                if(l.length>1)return <Carousel images={l} key={i}/>
+                return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
             case 'text':default:return <p className='content content-text' key={i}>{this.content}</p>
         }
     }

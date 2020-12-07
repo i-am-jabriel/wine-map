@@ -21,12 +21,12 @@
     width:100%;
     box-sizing: border-box;
 }
-.account-row{
+.modal-link{
     padding:10px 0;
     padding-left:40px;
     justify-content: flex-start;
     align-items: center;
 }
-.account-row .link{
+.modal-link .link{
     width:100%;
 }

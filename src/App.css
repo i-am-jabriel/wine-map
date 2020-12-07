@@ -15,7 +15,9 @@ html{
     --link-color:#EBD57C;
     --link-hover-color:#fff;
     --primary-shade:#5B5DAB;
+    --primary-black:#393A6B;
     --secondary-shade:#AB9B5B;
+    --secondary-black:#6B6139;
 
     --border-radius:4px;
     --border-radius-wide:16px;
@@ -23,7 +25,7 @@ html{
     --box-shadow:0px 0px 20px rgba(120,120,120,.8);
 }
 body{
-    background-color:#393A6B;
+    background-color:var(--primary-black);
 }
 a,.link{
     color:var(--secondary-shade);
@@ -50,7 +52,7 @@ a:hover,.link:hover,a.active,.link.active{
 .container a,.container .link,.open-container a,.open-container .link{
     color:black;
 }
-.container a:hover,.container .link:hover,.open-container a:hover,.open-container .link:hover{
+.container a:hover,.container .link:hover,.open-container a:hover,.open-container .link:hover, .container .link.active, .open-container .link.active{
     color:var(--alt-color);
 }
 
@@ -230,4 +232,62 @@ a:hover,.link:hover,a.active,.link.active{
 .preview-title{
     position: absolute;
     top:-40px;
+}
+
+.carousel-container{
+    position: relative;
+    font-size:4.5em;
+    letter-spacing: 5px;
+    width: 256px;
+    height: 256px;
+}
+.carousel-container img{
+    position: absolute;
+    height:100%;
+    width:100%;
+    transition: 0.3s all ease;
+    opacity: 0;
+}
+.carousel-container .active{
+    opacity: 1;
+}
+.carousel-buttons{
+    width:100%;
+}
+.carousel-dots{
+    position: relative;
+    top:60%;
+}
+.carousel-button{
+    position: absolute;
+    top:48%;
+}
+.carousel-button:first-child{left:0;}
+.carousel-button:last-child{right:0;}
+.modal{
+    position: fixed;
+    left:30%!important;
+    right:30%!important;
+    top:25%!important;
+    bottom:25%!important;
+}
+.modal div:focus{
+    outline:none;
+}
+.modal div:first-child{
+    z-index:2!important;
+    cursor: pointer;
+}
+.modal-inner{
+    background:white;
+    min-height:400px;
+    min-width:400px;
+    position: relative;
+    z-index:3;
+    overflow: auto;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+.modal-content{
+    padding:30px;
 }
