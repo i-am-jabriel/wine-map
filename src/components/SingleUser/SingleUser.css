@@ -1,11 +1,21 @@
 .single-user-container{
     margin-top:50px;
+    box-shadow:var(--box-shadow);
+    border-radius: var(--border-radius);
+    overflow:hidden;
 }
 .user-trend-content .user-content-row{
     opacity:0.6px;
     transition: all 0.3s ease;
     cursor: pointer;
     background:#fff;
+}
+.user-bio, .user-bio span{
+    width:100%;
+    text-align: left;
+}
+.user-bio span{
+    padding:20px;
 }
 .user-trend-content .user-content-row:hover{
     opacity:1;

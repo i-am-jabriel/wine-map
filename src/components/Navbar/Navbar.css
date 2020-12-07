@@ -34,6 +34,9 @@
 .navbar .MuiAvatar-root, .navbar svg{
     margin:auto 12px;
 }
-.navbar svg{
+/* .nav-right .MuiAvatar-root{
+    padding:10px;
+} */
+.navbar .nav-middle svg, .navbar .nav-right svg{
     height:54px;
 }

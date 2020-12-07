@@ -1,9 +1,10 @@
-import { Button, Fab, Tooltip } from "@material-ui/core";
-import { Add, Close } from "@material-ui/icons"
+import { Avatar, Button, Fab, Tooltip } from "@material-ui/core";
+import { Add, Close, Remove } from "@material-ui/icons"
 import Reply from "./Reply/Reply";
 import Rating from '@material-ui/lab/Rating';
 import Chip from '@material-ui/core/Chip';
 import {Link} from 'react-router-dom';
+import { useSpring } from "react-spring";
 
 export const api = 'http://localhost:2999';
 // export const sqlDateToJavascript = n => new Date(Date.UTC(...n.split(/[- :]/))).toString();
@@ -38,6 +39,7 @@ export class User{
             body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
         });
     }
+    get avatar(){return <Avatar>{this.name[0]}</Avatar>}
 }
 
 export class Post{
@@ -48,7 +50,7 @@ export class Post{
         this.body = Content.parse(this.body);
         // console.log(arguments);
         Post.posts[`${this.id}`] = this;
-        ['like','unlike','destroy','clickEdit'].forEach(m=>this[m]=this[m].bind(this));
+        ['like','unlike','destroy','clickEdit','toggleHide'].forEach(m=>this[m]=this[m].bind(this));
     }
     static posts = {};
     render(){
@@ -57,31 +59,35 @@ export class Post{
         //console.log('individual post #',this.id,' with ',this.comments.length,'comments','is replying?',corktaint.reply==this);
         return (
             <div className='content-post col' key={this.id}>
-                {admin ? <p className='delete-post-button' onClick={this}> <Close/> </p>: null}
-                <div className='col post-container'>
-                    {corktaint.reply!=this?this.body.map((c,i)=>c.render(i)):<Reply value={Content.fullValues(this.body).join('\n')}/>}
-                </div>
-                {admin?<p className='post-edit' onClick={this.clickEdit}>Edit</p>:null}
-                <div className='post-credit'>
-                    <Link to={`/user/${this.userid}`}><p>- {User.users[this.userid].name}</p></Link><p>{sqlDateToJavascript(this.postdate)}</p>
+                <Tooltip title='Hide'><Fab color='primary'className='hide-post-button' onClick={this.toggleHide}><Remove/></Fab></Tooltip>
+                {!this.hide?<>
+                    {admin ? <Tooltip title='Delete Post'><Fab color='primary' className='delete-post-button' onClick={this.destroy}> <Close/> </Fab></Tooltip>: null}
+                    <div className='col post-container'>
+                        {corktaint.reply!=this?this.body.map((c,i)=>c.render(i)):<Reply value={Content.fullValues(this.body).join('\n')}/>}
                     </div>
-                <div className='post-like-count' >
-                    <span onClick={()=>!_like?this.like():this.unlike(_like)}>{this.likes.length} {_like?<>❤️</>:<>♡</>}</span>
-                    {corktaint.reply==this?<Reply/>:
-                    <span className='row post-reply-button'><Tooltip title='Reply' placement='top'><Fab color='primary' onClick={()=>{corktaint.reply=this;corktaint.refresh()}}>
-                        <Add/>
-                    </Fab></Tooltip></span>
-                    }
-                </div>
+                    {admin?<p className='post-edit link' onClick={this.clickEdit}>Edit</p>:null}
+                    <div className='post-credit'>
+                        <Link to={`/user/${this.userid}`}><p>- {User.users[this.userid].name}</p></Link><p>{sqlDateToJavascript(this.postdate)}</p>
+                        </div>
+                    <div className='post-like-count' >
+                        <Tooltip title={_like?'Unlike':'Like'} placement='top'><span onClick={()=>!_like?this.like():this.unlike(_like)}>{this.likes.length} {_like?<>❤️</>:<>♡</>}</span></Tooltip>
+                        {corktaint.reply==this?<Reply/>:
+                        <span className='row post-reply-button'><Tooltip title='Reply' placement='top'><Fab color='primary' onClick={()=>{corktaint.reply=this;corktaint.refresh()}}>
+                            <Add/>
+                        </Fab></Tooltip></span>
+                        }
+                    </div>
                 <div className='post-comments'>
                     {this.comments.length?
                         this.comments.map((c,i)=>c.render(i)):
                         <p>No Comments Yet...</p>
                     }
                 </div>
+                </>:null}
             </div>
         )
     }
+    
     static get(id){
         if(Post.posts[id])return Post.posts[id];
         return fetch(`${api}/posts/${id}`)
@@ -177,6 +183,10 @@ export class Post{
         corktaint.posts=posts;
         corktaint.refresh();
     }
+    toggleHide(){
+        this.hide=!this.hide;
+        corktaint.refresh();
+    }
 }
 // id serial primary key,
 // broadcast varchar(32) default 'Public',
@@ -190,7 +200,7 @@ export class Comment{
         if(!body.length) Object.assign(this,id);
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
-        ['like','unlike','clickEdit','destroy','reply'].forEach(f=>this[f]=this[f].bind(this));
+        ['like','unlike','clickEdit','destroy','reply','toggleHide'].forEach(f=>this[f]=this[f].bind(this));
         comments[this.id] = this;
     }
     static comments = {};
@@ -202,31 +212,31 @@ export class Comment{
     render(){
         var _like = this.likes.find(l=>l.userid==corktaint.user.id);
         // console.log(this.body,this.comments);
-        return [
-            <div className='comment-container' key={this.id}>
-                {this.body.map((c,i)=>c.render(i))}
-                {this.likes.length ? <p className='comment-like-count' onClick={_like?()=>this.unlike(_like):this.like}>{this.likes.length} ❤️</p> : null}
-                <div className='comment-options'>
-                    { !_like ?
-                        <><span onClick={this.like}>Like</span> | </>:
-                        <><span onClick={()=>this.unlike(_like)}>Unlike</span> | </>
-                    }
-                    <span onClick={()=>this.reply()}> Reply</span> |
-                    { corktaint.user.id == this.userid || corktaint.user.admin ?
-                        <>
-                            <span onClick={this.clickEdit}> Edit</span> | 
-                            <span onClick={this.destroy} > Delete</span>
-                        </>:null
-                    }    
-                </div>
-                { corktaint.reply==this?<Reply value={this.replyMode=='reply'?null:Content.fullValues(this.body).join('\n')}/>:null}
-                <div className='comment-chain'>
-                    {this.comments.map((c)=>c.render())}
-                </div>
+        return <div className='comment-container' key={this.id}>
+                    <div className='hide-comment-wrapper'><Tooltip title={this.hide?'Show':'Hide'} placement='top'><span className='hide-comment-button link' onClick={this.toggleHide}>[{this.hide?'+':'-'}]</span></Tooltip></div>
+                    {this.hide?null:<>
+                        <Link className='comment-author' to={`/user/${this.userid}`}>{User.users[this.userid].name}</Link>
+                        {this.body.map((c,i)=>c.render(i))}
+                        {this.likes.length ? <span className='comment-like-count' onClick={_like?()=>this.unlike(_like):this.like}>{this.likes.length}<Tooltip title={_like?'Unlike':'Like'} placement='top'><span>❤️</span></Tooltip></span> : null}
+                        <div className='comment-options'>
+                            {[ !_like ? <span className='link' onClick={this.like}>Like</span> : <span className='link' onClick={()=>this.unlike(_like)}>Unlike</span>,
+                                <span className='link' onClick={()=>this.reply()}> Reply</span>,
+                                corktaint.user.id == this.userid || corktaint.user.admin ?
+                                    <><span className='link' onClick={this.clickEdit}> Edit</span> | <span className='link' onClick={this.destroy} > Delete</span></> : null
+                            ].filter(a=>a).reduce((a,c,i,arr)=>a.concat(c,i<arr.length-1?<> | </>:undefined),[])}
+                        </div>
+                        { corktaint.reply==this?<Reply value={this.replyMode=='reply'?null:Content.fullValues(this.body).join('\n')}/>:null}
+                        <div className='comment-chain'>
+                            {this.comments.map((c)=>c.render())}
+                        </div>
+                    </>}
             </div>
-        ]
     }
     get desc(){return trim(Content.fullValues(this.body.slice(0,3)).join(''))}
+    toggleHide(){
+        this.hide = !this.hide;
+        corktaint.refresh();
+    }
     unlike(like){
         Like.deleteLike(like,this);
         User.users[this.userid].changeScoreBy(-1);
@@ -280,7 +290,10 @@ export class Comment{
             .then(r=>{
                 const [a,b]=Comment.from(r,i);
                 c.comments = a || [];
-                c.comments.forEach(cc=>cc.parent=c);
+                c.comments.forEach(cc=>{
+                    cc.parent=c;
+                    if(b)b.push(User.get(cc.userid));
+                });
                 if(b)return Promise.all(b);
             })).concat(comments.map(c=>Like.getLikesFor(c)));
         return [comments, promises]

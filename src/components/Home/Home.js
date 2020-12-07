@@ -72,7 +72,7 @@ export default function Home(props){
         corktaint.refresh();
     }
     return (
-        <div className='home main-container col' name='New Post'>
+        <div className='home main-container open-container col' name='New Post'>
             <Switch>
                 <Route exact path='/'>
                  {corktaint.reply==home ? <div className='reply-wrapper'><Reply/></div>:

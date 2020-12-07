@@ -1,6 +1,6 @@
 import { Avatar } from '@material-ui/core';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {api, corktaint, User, Post, Comment} from '../Helper';
 import './SingleUser.css';
 export default function SingleUser(props){
@@ -43,20 +43,25 @@ export default function SingleUser(props){
             </span>:null}
         </div>
         <div className='user-highlighted-content col'>
-            <div>
-                <select value={type} onInput={setType}>
+            <div className='row space-around'>
+                <span>Content: <select value={type} onInput={setType}>
                     {types.map(x=><option value={x} key={x}>{x}</option>)}
-                </select>
-                Sort By: <select value={trend} onInput={setTrend}>
+                </select></span>
+                <span>Sort By: <select value={trend} onInput={setTrend}>
                     {trends.map(x=><option value={x} key={x}>{x}</option>)}
-                </select>
+                </select></span>
             </div>
             <div className='user-trend-content col'>
-                {content.map((x,i)=><div className='user-content-row row'>
-                    <p>{(page-1)*10+i+1} - </p>
+                <div className='user-content-row user-content-header row'>
+                    <p>Rank</p>
+                    <p>Desc</p>
+                    <p>Score</p>
+                </div>
+                {content.map((x,i)=><Link to={`/${type.substring(0,type.length-1)}/${x.id}`}><div className='user-content-row row'>
+                    <p>{(page-1)*10+i+1}</p>
                     <p>{x.desc}</p>
                     <p>{x.score}</p>
-                </div>)}
+                </div></Link>)}
             </div>
             <div></div>
         </div>

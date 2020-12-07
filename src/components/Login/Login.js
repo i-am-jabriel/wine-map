@@ -21,6 +21,11 @@ export default function Login(props){
         const date = new Date();
         date.setDate(date.getDate() + 7);
         Cookie.set('email',email,date);
+        corktaint.logOut=()=>{
+            Cookie.delete('email');
+            corktaint.user=null;
+            props.setUser(false);
+        }
         fetch(`${api}/userWithEmail/${email}`).then(r=>r.json()).then(r=>r[0]&&setUser(r[0]));
     }    
 

@@ -16,6 +16,11 @@ html{
     --link-hover-color:#fff;
     --primary-shade:#5B5DAB;
     --secondary-shade:#AB9B5B;
+
+    --border-radius:4px;
+    --border-radius-wide:16px;
+
+    --box-shadow:0px 0px 20px rgba(120,120,120,.8);
 }
 body{
     background-color:#393A6B;
@@ -42,6 +47,13 @@ a:hover,.link:hover,a.active,.link.active{
 .MuiFab-secondary:hover,.MuiButton-containedSecondary:hover{
     background-color:var(--secondary-shade)!important;
 }
+.container a,.container .link,.open-container a,.open-container .link{
+    color:black;
+}
+.container a:hover,.container .link:hover,.open-container a:hover,.open-container .link:hover{
+    color:var(--alt-color);
+}
+
 .flex{
     display: sticky;
     justify-content: center;
@@ -95,7 +107,8 @@ a:hover,.link:hover,a.active,.link.active{
     padding:3em 3em 6em;
     border:1px solid black;
     margin-bottom:3em;
-    box-shadow:0px 0px 20px rgba(120,120,120,120.5);
+    box-shadow:var(--box-shadow);
+    border-radius:var(--border-radius);
 }
 .content-post p{
     padding:10px 5px;
@@ -110,6 +123,23 @@ a:hover,.link:hover,a.active,.link.active{
     width:100%;
     padding:40px 40px 80px;
     margin-bottom: 20px;
+}
+.content-post{
+    position: relative;
+}
+.content-post .hide-post-button{
+    position: absolute;
+    left:0;
+    top:0;
+}
+.content-post .delete-post-button{
+    position: absolute;
+    right:0;
+    top:0;
+}
+.content-post .MuiFab-root{
+    width:36px!important;
+    height:36px!important;
 }
 .post-container img{
     max-width:100%;
@@ -129,8 +159,21 @@ a:hover,.link:hover,a.active,.link.active{
     margin-top:-10px;
 }
 .post-credit p{margin:0;}
-.post-comments{
-    width:100%;
+.post-comments{width:100%;}
+.hide-comment-button{
+    position: absolute;
+    left:20px;
+    top:20px;
+    font-size:0.75em;
+    z-index:2;
+}
+.hide-comment-wrapper{
+    margin:0 0 30px;
+    height:5px;
+}
+.comment-author{
+    position: absolute;
+    top:20px;
 }
 .comment-container{
     box-sizing: border-box;
@@ -139,21 +182,8 @@ a:hover,.link:hover,a.active,.link.active{
     padding-left:40px;
     position: relative;
 }
-.comment-container::before{
-    content:'[-] ';
-    color:darkturquoise;
-    font-size:16px;
-    transform:grayscale(0);
-    position: absolute;
-    left:20px;
-    top:5px;
-}
-.comment-options span{
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-.comment-options span:hover{
-    color:red;
+.comment-options{
+    font-size:0.75em;
 }
 .post-like-count{
     font-size:1.5em;
@@ -163,10 +193,6 @@ a:hover,.link:hover,a.active,.link.active{
 }
 .post-like-count span,.comment-like-count{
     cursor: pointer;
-}
-.post-reply-button>*{
-    width:40px!important;
-    height:40px!important;
 }
 .reply-container{
     margin:20px 0;

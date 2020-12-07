@@ -46,7 +46,7 @@ export default function Leaderboard(){
             <span>Top: <select onInput={e=>setType(e.target.value)}>
                 {types.map(t=><option value={t}>{t}</option>)}
             </select></span>
-            <span>Sort by: <select onInput={e=>setTrend(e.target.value)}>
+            <span>Sort by: <select onInput={e=>setTrend(e.target.value)} value={trend}>
                 {trends.map(t=><option value={t}>{t}</option>)}
             </select></span>
         </div>

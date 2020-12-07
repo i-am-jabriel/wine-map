@@ -7,7 +7,7 @@
     background-color: white;
     box-shadow:0px 0px 5px rgba(0,0,0,.3);
     border:1px black solid;
-    overflow:hidden;
+    overflow:auto;
 }
 .navbar-modal-container h1{
     margin:0;
@@ -16,4 +16,17 @@
 .new-message-button{
     position: relative;
     right:0;
+}
+.navbar-modal-content,.account-row{
+    width:100%;
+    box-sizing: border-box;
+}
+.account-row{
+    padding:10px 0;
+    padding-left:40px;
+    justify-content: flex-start;
+    align-items: center;
+}
+.account-row .link{
+    width:100%;
 }

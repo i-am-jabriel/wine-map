@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { useSpring, animated } from "react-spring";
 import {PostAdd} from '@material-ui/icons';
 import { corktaint } from "../Helper";
+import Account from './Account';
 import './NavbarModal.css';
 
 const types ={
     messenger:{name:'Messenger',bottom:'10%'},
-    notification:{name:'Notifications',bottom:'40%'}
+    notifications:{name:'Notifications',bottom:'40%'},
+    account:{name:'Account',bottom:'40%',src:<Account/>},
+    newPost:{name:'Create Post',bottom:'40%'},
 }
 export default function NavbarModal(props){
     const obj = types[props.type];
@@ -22,8 +25,6 @@ export default function NavbarModal(props){
         <div className='navbar-modal-header row' onClick={close}>
             <h1>{obj.name}</h1><PostAdd className='new-message-button' onClick={()=>{setReply(corktaint.reply=obj)}} />
         </div>
-        <div className=''>
-            
-        </div>
+        {!obj.src?null:obj.src}
     </animated.div>
 }
