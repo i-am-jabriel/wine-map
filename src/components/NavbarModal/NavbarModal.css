@@ -21,12 +21,16 @@
     width:100%;
     box-sizing: border-box;
 }
-.modal-link{
-    padding:10px 0;
-    padding-left:40px;
+.modal-link, .navbar-modal-container .link{
+    padding:15px 0;
+    margin:5px 0;
     justify-content: flex-start;
     align-items: center;
 }
 .modal-link .link{
     width:100%;
+}
+.navbar .navbar-modal-user-profile{
+    padding:5px 20px;
+    box-sizing: border-box;
 }

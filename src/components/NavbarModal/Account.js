@@ -8,15 +8,15 @@ export default function Account(props){
     //const buttons=[[<Feedback/>,'Leave Feedback',()=>{}],[<ExitToApp/>,'Log Out',corktaint.logOut]].map(b=>new Button(...b));
     const buttons=Button.from([[<Feedback/>,'Leave Feedback',()=>{}],[<ExitToApp/>,'Log Out',corktaint.logOut]]);
     return <div className='account-container navbar-modal-content col'>
-        <div className='account-row link'>
+        <Link to={`/user/${corktaint.user.id}`} className='link wide navbar-modal-user-profile'>
+        <div className='account-row'>
             <span>
                 {corktaint.user.avatar}
             </span>
-            <Link to={`/user/${corktaint.user.id}`}>
                 <p><h5>{corktaint.user.name}</h5></p>
                 <p>See your profile</p>
-            </Link>
         </div>
+            </Link>
         <hr/>
         {Button.render(buttons,'account-row')}
     </div>

@@ -1,7 +1,7 @@
 import { Avatar } from '@material-ui/core';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {api, corktaint, User, Post, Comment} from '../Helper';
+import {api, User, Post, Comment} from '../Helper';
 import './SingleUser.css';
 export default function SingleUser(props){
     const { id } = useParams();
@@ -15,18 +15,18 @@ export default function SingleUser(props){
 
     const setType = e=>_setType(e.target.value);
     const setTrend = e=>_setTrend(e.target.value);
-    const classes = {
-        posts: Post,
-        comments: Comment,
-    }
+    
 
     useEffect(()=>{
+        if(!id)return;
         Promise.all([User.get(id)]).then(u=>setUser(u[0]));  
-    },[])
+    },[id])
 
     useEffect(()=>{
-        console.log('setting user to ',user);
-        console.log(type,classes[type],classes[type].get);
+        const classes = {
+            posts: Post,
+            comments: Comment,
+        }
         if(!user)return;
         fetch(`${api}/feed/from/${user.id}/${type}/${trend}/${page}`)
             .then(r=>r.json())
@@ -35,12 +35,12 @@ export default function SingleUser(props){
     },[type,trend,page,user])
     return <div className='single-user-container container col'>
         <div className='user-bio row'>
-            {user?<span>
-                <Avatar variant="square" className={classes.square}>{user.name?user.name[0]:'C'}</Avatar>
+            {user && <span>
+                <Avatar variant="square">{user.name[0]}</Avatar>
                 <p>{user.name}</p>
                 <p>Score: {user.score}</p>
                 <p>{user.bio}</p>
-            </span>:null}
+            </span>}
         </div>
         <div className='user-highlighted-content col'>
             <div className='row space-around'>

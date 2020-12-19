@@ -6,6 +6,8 @@ import Chip from '@material-ui/core/Chip';
 import {Link} from 'react-router-dom';
 import Carousel from './Carousel/Carousel';
 import { useSpring } from "react-spring";
+import {aws} from '../secret';
+import AWS from 'aws-sdk';
 
 export const api = 'http://localhost:2999';
 export const mod = (a,b) => ((a%b)+b)%b;
@@ -46,7 +48,7 @@ export class User{
 
 export class Post{
     constructor(id,userId,title,body = [], comments=[],postDate){
-        Object.assign(this,{comments:[],body:[],likes:[]});
+        Object.assign(this,{comments:[],body:[],likes:[],hide:false});
         if(!userId) Object.assign(this,id);
         else Object.assign(this,{id, userId,title,comments,body,postDate});
         this.body = Content.parse(this.body);
@@ -56,13 +58,14 @@ export class Post{
     }
     static posts = {};
     render(){
+        console.log(this.hide)
         var _like = this.likes.find(l=>l.userid==corktaint.user.id);
         var admin = this.userid == corktaint.user.id || corktaint.user.admin;
         //console.log('individual post #',this.id,' with ',this.comments.length,'comments','is replying?',corktaint.reply==this);
         return (
-            <div className='content-post col' key={this.id}>
+            <div className='content-post col' key={this.id} name={corktaint.scrollTo==this?'scroll':undefined}>
                 <Tooltip title='Hide'><Fab color='secondary'className='hide-post-button' onClick={this.toggleHide}><Remove/></Fab></Tooltip>
-                {!this.hide?<>
+                {!this.hide && <>
                     {admin ? <Tooltip title='Delete Post'><Fab color='secondary' className='delete-post-button' onClick={this.destroy}> <Close/> </Fab></Tooltip>: null}
                     <div className='col post-container'>
                         {corktaint.reply!=this?this.body.map((c,i)=>c.render(i)):<Reply value={Content.fullValues(this.body).join('\n')}/>}
@@ -85,7 +88,7 @@ export class Post{
                         <p>No Comments Yet...</p>
                     }
                 </div>
-                </>:null}
+                </>}
             </div>
         )
     }
@@ -93,7 +96,7 @@ export class Post{
     static get(id){
         if(Post.posts[id])return Post.posts[id];
         return fetch(`${api}/posts/${id}`)
-            .then(r=>r.json()).then(r=>new Post(r[0]))
+            .then(r=>r.json()).then(r=>Post.greedyLoad(new Post(r[0])))
     }
     static render(posts){
         //corktaint.setPosts(posts);
@@ -174,13 +177,22 @@ export class Post{
             }
         );
     }
-    static async from(a){
-        let posts = a.map(b=>Post.posts[b.id]||new Post(b));
+    async greedyLoad(){
+        let x = await Post.greedyLoad(this);
+        return this;
+    }
+    static async greedyLoad(posts){
+        if(!Array.isArray(posts))posts = [posts];
         var promises = posts.map(p=>p.getComments()).concat(posts.map(p=>Like.getLikesFor(p))).concat(posts.map(p=>User.get(p.userid)));
         do{
             promises = (await Promise.all(promises)).filter(p=>p&&p.then);
         }
         while(promises.length);
+        return this;
+    }
+    static async from(a){
+        let posts = a.map(b=>Post.posts[b.id]||new Post(b));
+        let x = await Post.greedyLoad(posts);
         console.log('finished promises',posts,corktaint,User.users);
         corktaint.posts=posts;
         corktaint.refresh();
@@ -214,7 +226,7 @@ export class Comment{
     render(){
         var _like = this.likes.find(l=>l.userid==corktaint.user.id);
         // console.log(this.body,this.comments);
-        return <div className='comment-container' key={this.id}>
+        return <div className='comment-container' key={this.id} name={corktaint.scrollTo==this?'scroll':undefined}>
                     <div className='hide-comment-wrapper'><Tooltip title={this.hide?'Show':'Hide'} placement='top'><span className='hide-comment-button link' onClick={this.toggleHide}>[{this.hide?'+':'-'}]</span></Tooltip></div>
                     {this.hide?null:<>
                         <Link className='comment-author' to={`/user/${this.userid}`}>{User.users[this.userid].name}</Link>
@@ -326,8 +338,7 @@ export class Like{
             .then(r=>obj.likes=r);
     }
     static likeObj(obj){
-        console.log('firing like on ',obj,obj.id);
-        debugger;
+        // console.log('firing like on ',obj,obj.id);
         return fetch(`${api}/likes/${obj.constructor.name.toLowerCase()}s/${obj.id}`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
@@ -338,7 +349,7 @@ export class Like{
         });
     }
     static deleteLike(like,obj){
-        console.log('firing delete like on',obj,obj.id);
+        // console.log('firing delete like on',obj,obj.id);
         return fetch(`${api}/likes/${like.id}`,{method:'DELETE'})
             .then(r=>{
                 obj.likes.splice(obj.likes.findIndex(a=>a.id==like.id),1);
@@ -396,3 +407,34 @@ export const corktaint ={
     Post
 };
 window.corktaint=corktaint;
+const readBlob = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = e =>resolve(e.target.result);
+    reader.readAsDataURL(file);
+    // reader.readAsText(file);
+});
+// export AWS_SDK_LOAD_CONFIG="true";
+export async function uploadToBucket(files, onUpload, onComplete){
+    let file;
+    let val = [];
+    //files = await Promise.all([...files].map(f=>readBlob(f)))
+    files=Array.from(files);
+    while(file = files.shift()){
+        const params = {
+            ACL: 'public-read',
+            Key: file.name,
+            ContentType: file.type,
+            Body: file,
+        }
+        console.log('starting upload of ',{file});
+        let x = await aws.bucket.putObject(params,()=>!files.length && onComplete(val))
+            .on('httpUploadProgress', (evt) =>onUpload((evt.loaded / evt.total) * 100))
+            .send((e) => {
+                if (e && !console.log(e))throw e;
+                return 1;
+            });
+        console.log('uploaded! remaining',files.length);
+        val.push(x);
+    }
+}

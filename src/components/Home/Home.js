@@ -8,6 +8,8 @@ import WineMap from '../WineMap/WineMap';
 import {Switch, Route, BrowserRouter as Router} from 'react-router-dom';
 import Leaderboard from "../Leaderboard/Leaderboard";
 import SingleUser from "../SingleUser/SingleUser";
+import Scroll from 'react-scroll';
+import SinglePost from "../SinglePost/SinglePost";
 
 const home = {name:'Home',isPost:true};
 export function newPost(){
@@ -51,7 +53,13 @@ export default function Home(props){
         .then(r=>Post.from(r))
     },[]);
     useEffect(()=>{
-        Object.assign(corktaint,{setPage}); 
+        Object.assign(corktaint,{setPage});
+        if(corktaint.scrollTo)
+            Scroll.scroller.scrollTo('scroll', {
+                delay: 100,
+                smooth: true,
+                offset: 50, // Scrolls to element + 50 pixels down the page
+            })
     },[page]);
     
     const showButtons = () =>{
@@ -93,6 +101,8 @@ export default function Home(props){
                 <Route path='/user/:id'><SingleUser/></Route>
                 <Route path='/map'> <WineMap/> </Route>
                 <Route path='/leaderboard'><Leaderboard/></Route>
+                <Route path='/post/:id'><SinglePost/></Route>
+                <Route path='/comment/:commentid'><SinglePost/></Route>
             </Switch>
         </div>
     )

@@ -37,10 +37,14 @@ a,.link{
 a:hover,.link:hover,a.active,.link.active{
     color:var(--secondary-color);
 }
-.MuiFab-primary,.MuiButton-containedPrimary{
+.MuiFab-primary,.MuiButton-containedPrimary,button{
+    color:white!important;
     background-color:var(--primary-color)!important;
 }
-.MuiFab-primary:hover,.MuiButton-containedPrimary:hover{
+.PrivateTabIndicator-colorSecondary-3{
+    background:var(--primary-black)!important;
+}
+.MuiFab-primary:hover,.MuiButton-containedPrimary:hover,button:hover{
     background-color:var(--primary-shade)!important;
 }
 .MuiFab-secondary,.MuiButton-containedSecondary{
@@ -71,6 +75,7 @@ a:hover,.link:hover,a.active,.link.active{
 .wrap{
     flex-wrap: wrap;
 }
+.wide{width:100%}
 .col{
     display:flex;
     flex-direction: column;
@@ -289,5 +294,5 @@ a:hover,.link:hover,a.active,.link.active{
     box-shadow: var(--box-shadow);
 }
 .modal-content{
-    padding:30px;
+    padding:20px 40px;
 }

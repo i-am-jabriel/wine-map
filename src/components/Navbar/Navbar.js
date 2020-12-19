@@ -20,13 +20,13 @@ export default props => {
     return (
         <div className='navbar row'>
             <div className='nav-left'><span className='logo'>CorkTaint</span></div>
-            <div className='nav-middle row'>
+            <div className='nav-middle navbar-nav row'>
                 <Tooltip title='Wine Map'><NavLink to='/map'><MapTwoTone className={view=='Wine Map'?'active':''}/></NavLink></Tooltip>
                 <Tooltip title='Discover'><NavLink exact to='/'><WhatshotTwoTone className={view=='Discover'?'active':''}/></NavLink></Tooltip>
                 <Tooltip title='Reviews'><NavLink to='/reviews'><MenuBookTwoTone className={view=='Reviews'?'active':''}/></NavLink></Tooltip>
                 <Tooltip title='Leaderboard'><NavLink to='/leaderboard'><ScoreTwoTone className={view=='Leaderboard'?'active':''}/></NavLink></Tooltip>
             </div>
-            <div className='nav-right row'>
+            <div className='nav-right navbar-nav row'>
                 {corktaint.user?
                 <Tooltip title={corktaint.user.name}><RouteLink to={`/user/${corktaint.user.id}`}>{corktaint.user.avatar}</RouteLink></Tooltip>:null}
                 <Tooltip title='New Post'><a onClick={newPost}><NoteAddTwoTone/></a></Tooltip>

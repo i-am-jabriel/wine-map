@@ -19,8 +19,10 @@
 .navbar span:hover, .navbar svg:hover, .navbar .MuiAvatar-root:hover,.navbar .active, .navbar .active svg{
     opacity:1;
 }
+.navbar-modal-container{
+    padding:30px;
+}
 .nav-middle{
-    position: relative;
     position: relative;
     left:80px;
 }
@@ -31,12 +33,15 @@
 .nav-left{
     margin-right:auto;
 }
-.navbar .MuiAvatar-root, .navbar svg{
+ .navbar svg{
     margin:auto 12px;
 }
 /* .nav-right .MuiAvatar-root{
     padding:10px;
 } */
-.navbar .nav-middle svg, .navbar .nav-right svg{
+.navbar-nav svg{
     height:54px;
+}
+.navbar-nav .MuiAvatar-root{
+    margin:10px 12px;
 }
