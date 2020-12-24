@@ -11,7 +11,7 @@ CREATE TABLE users (
   achievements VARCHAR(64)[],
   score integer DEFAULT 0
 );
-
+-- postid??
 CREATE TABLE posts(
   id serial primary key,
   userId int NOT NULL,

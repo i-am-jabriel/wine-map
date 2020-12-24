@@ -7,11 +7,12 @@ export default props => {
     const [title, setTitle] = useState(props.value || '')
     return (
         <div className='reply-container col'>
-            {corktaint.reply.isPost?
-                <input value={title} onInput={e=>setTitle(e.target.value)} className='post-title-input' placeholder='Title'/>:null}
             <div className='reply-content row'>
-                <textarea id='reply' onInput={e=>setValue(e.target.value)} defaultValue={value}/>
-                <div className='reply-preview'>
+                <div className='col'>
+                    {corktaint.reply.isPost && <input value={title} onInput={e=>setTitle(e.target.value)} className='post-title-input wide' placeholder='Title'/>}
+                    <textarea id='reply' className='wide' onInput={e=>setValue(e.target.value)} defaultValue={value}/>
+                </div>
+                <div className='reply-preview wide'>
                     <h3 className='preview-title'>Preview:</h3>
                     <div className='preview-contents'>{parseBody(value).map((c,i)=>c.render(i))}</div>
                 </div>

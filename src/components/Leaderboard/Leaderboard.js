@@ -34,7 +34,7 @@ export default function Leaderboard(){
                 </div>
                 {r.map(r=><Link to={`/${type.substring(0,type.length-1)}/${r.id}`}><div className='leaderboard-row row'>
                     {cols[type].map(c=><p key={c}>{c!='postdate'?r[c]:sqlDateToJavascript(r[c])}</p>)}
-                    <p>{r.trend[trend]}</p>
+                    <p>{r && r?.trend?.[trend]}</p>
                 </div></Link>)}
             </div>
             )

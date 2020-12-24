@@ -1,0 +1,26 @@
+.discover-options-container{
+    width:500px;
+    position: relative;
+    top:100px;
+}
+.discover-options{
+    position:fixed;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border:1px solid black;
+    background:#fff;
+    height:250px;
+    padding:0 -50px;
+    left:50px;
+    width:inherit;
+}
+.discover-options .row>span:nth-child(even){
+    padding:0 5px;
+}
+.reply-wrapper{
+    background:#fff;
+    margin:20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding:10px;
+}

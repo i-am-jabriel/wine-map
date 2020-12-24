@@ -24,7 +24,7 @@
 }
 .nav-middle{
     position: relative;
-    left:80px;
+    left:-30px;
 }
 .nav-right{
     margin-left:auto;
@@ -44,4 +44,20 @@
 }
 .navbar-nav .MuiAvatar-root{
     margin:10px 12px;
+}
+.search-container{
+    position: relative;
+    margin-left:10px;
+}
+.search-icon{
+    position:absolute;
+    left:-12px;
+    top:2px;
+    color:#aaa;
+}
+.search-input{
+    padding:6px; 
+    border-radius:5px;
+    outline: none;
+    padding-left:20px;
 }

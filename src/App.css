@@ -85,6 +85,9 @@ a:hover,.link:hover,a.active,.link.active{
     min-height:400px;
     background:white;
 }
+.home.open-container{
+    padding-bottom:10px;
+}
 .login-container{
     padding:60px 0;
 }
@@ -216,10 +219,9 @@ a:hover,.link:hover,a.active,.link.active{
 .reply-content>div{
     cursor: default;
 }
-.post-title-input{
-    width:48%;
+.reply-content .wide{
+    width:100%;
     margin-bottom:10px;
-    margin-right: auto;
 }
 .reply-buttons button{
     margin:5px 20px;

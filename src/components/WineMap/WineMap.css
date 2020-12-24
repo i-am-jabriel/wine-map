@@ -1,5 +1,17 @@
 .wine-map{
-    max-width:1000px;
-    padding-top:40px;
-    min-width:80vw;
+    background:rgba(255,255,255,1);
+    box-shadow:var(--box-shadow);
+    border-radius:var(--border-radius);
+    padding:15px 25px;
+    width:60vw;
+    max-width:60vw;
+    padding-bottom:0;
+    max-height:80vh;
+    margin-top:40px;
 }
+.wine-map h1{
+    margin:0;
+}
+
+/* .wine-map rect{
+} */

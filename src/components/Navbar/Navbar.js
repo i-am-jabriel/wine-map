@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import NavbarModal from '../NavbarModal/NavbarModal';
-import {ChatTwoTone, ExpandMore, NoteAddTwoTone, NotificationsTwoTone, WhatshotTwoTone, ScoreTwoTone, MenuBookTwoTone, MapTwoTone} from '@material-ui/icons';
+import {ChatTwoTone, ExpandMore, NoteAddTwoTone, NotificationsTwoTone, WhatshotTwoTone, ScoreTwoTone, MenuBookTwoTone, MapTwoTone, Search} from '@material-ui/icons';
 import './Navbar.css';
 import { Avatar, Tooltip } from '@material-ui/core';
 import { corktaint } from '../Helper';
@@ -13,13 +13,21 @@ export default props => {
     const {view, setView} = props;
     const [navbarModal, setNavbarModal] = useState(false);
     const [close, setClose] = useState(false);
+    const [query, setQuery] = useState('');
+    const updateQuery = e => setQuery(e.target.value);
     const newPost=()=>navbarModal=='newPost'?setClose(true):setNavbarModal('newPost');
     const messenger=()=>navbarModal=='messenger'?setClose(true):setNavbarModal('messenger');
     const notifications=()=>navbarModal=='notifications'?setClose(true):setNavbarModal('notifications');
     const account=()=>navbarModal=='account'?setClose(true):setNavbarModal('account');
     return (
         <div className='navbar row'>
-            <div className='nav-left'><span className='logo'>CorkTaint</span></div>
+            <div className='nav-left'>
+                <span className='logo link'>Cork-Taint Wine Map</span>
+                <span className='search-container'>
+                    <Search className='search-icon'/>
+                    <input className='search-input' value={query} onInput={updateQuery} placeholder='Search'/>
+                </span>
+            </div>
             <div className='nav-middle navbar-nav row'>
                 <Tooltip title='Wine Map'><NavLink to='/map'><MapTwoTone className={view=='Wine Map'?'active':''}/></NavLink></Tooltip>
                 <Tooltip title='Discover'><NavLink exact to='/'><WhatshotTwoTone className={view=='Discover'?'active':''}/></NavLink></Tooltip>
