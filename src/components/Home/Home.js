@@ -5,6 +5,7 @@ import Leaderboard from "../Leaderboard/Leaderboard";
 import SingleUser from "../SingleUser/SingleUser";
 import SinglePost from "../SinglePost/SinglePost";
 import Discover from "./Discover";
+import socket from 'socket.io-client';
 
 export default function Home(props){
     return (

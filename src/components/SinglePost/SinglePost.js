@@ -7,8 +7,10 @@ import './SinglePost.css';
 export default function SinglePost(props){
     const { id, commentid } = useParams();
     const [post, setPost] = useState(null);
+    const [page, setPage] = useState(<></>);
+    Object.assign(corktaint,{setPage});
 
-    const loadPost = id => Promise.all([Post.get(id)]).then(p=>setPost(p[0]))
+    const loadPost = id => Promise.all([Post.get(id)]).then(p=>setPost(p[0]));
 
     useEffect(()=>{
         if(corktaint.scrollTo){
@@ -18,6 +20,10 @@ export default function SinglePost(props){
                 offset: -50, // Scrolls to element + 50 pixels down the page
             })
             corktaint.scrollTo=null;
+        }
+        if(post){
+            corktaint.posts=[post];
+            corktaint.refresh();
         }
     },[post]);
     useEffect(()=>{
@@ -33,6 +39,7 @@ export default function SinglePost(props){
 
     return <div className='home main-container open-container col'>
         {/* {console.log('POST is ',post)} */}
-        {post?(Array.isArray(post)?post[0].render():post.render()):<></>}
+        {/* {post?(Array.isArray(post)?post[0].render():post.render()):<></>} */}
+        {page}
     </div>
 }

@@ -23,7 +23,7 @@ export default props => {
                         Post.submitNewPost(title,Content.fullValues(parseBody(value)));
                     else
                         if(corktaint.reply.replyMode != 'edit')
-                            Comment.addCommentTo(corktaint.reply, Content.fullValues(parseBody(value)));
+                            Comment.submitCommentToDatabase(corktaint.reply, Content.fullValues(parseBody(value)));
                         else
                             corktaint.reply.edit(Content.fullValues(parseBody(value)))
                 }}>Submit</Button>

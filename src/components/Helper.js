@@ -8,6 +8,7 @@ import Carousel from './Carousel/Carousel';
 import { useSpring } from "react-spring";
 import {aws} from '../secret';
 import AWS from 'aws-sdk';
+import {socket} from '../socket';
 
 export const api = 'http://localhost:2999';
 export const mod = (a,b) => ((a%b)+b)%b;
@@ -55,7 +56,7 @@ export class Post{
         this.body = Content.parse(this.body);
         // console.log(arguments);
         Post.posts[`${this.id}`] = this;
-        ['like','unlike','destroy','clickEdit','clickReply','toggleHide'].forEach(m=>this[m]=this[m].bind(this));
+        ['like','unlike','clickDestroy','clickEdit','clickReply','toggleHide'].forEach(m=>this[m]=this[m].bind(this));
     }
     static posts = {};
     render(){
@@ -66,7 +67,7 @@ export class Post{
             <div className='content-post col' key={this.id} name={corktaint.scrollTo==this.id?'scroll':undefined}>
                 <Tooltip title='Hide'><Fab color='secondary'className='hide-post-button' onClick={this.toggleHide}><Remove/></Fab></Tooltip>
                 {!this.hide && <>
-                    {admin ? <Tooltip title='Delete Post'><Fab color='secondary' className='delete-post-button' onClick={this.destroy}> <Close/> </Fab></Tooltip>: null}
+                    {admin ? <Tooltip title='Delete Post'><Fab color='secondary' className='delete-post-button' onClick={this.clickDestroy}> <Close/> </Fab></Tooltip>: null}
                     <div className='col post-container'>
                         {corktaint.reply==this && this.replyMode=='edit'?<Reply value={Content.fullValues(this.body).join('\n')}/>:this.body.map((c,i)=>c.render(i))}
                     </div>
@@ -110,12 +111,12 @@ export class Post{
     }
     get desc(){return trim(Content.fullValues(this.body.slice(0,3)).join(''))}
     like(){
-        Like.likeObj(this); 
+        Like.likeObjInDatabase(this); 
         User.users[this.userid].changeScoreBy(1);
         this.changeScoreBy(1);
     }
     unlike(like){
-        Like.deleteLike(like,this);
+        Like.deleteLikeInDatabase(this,like);
         User.users[this.userid].changeScoreBy(-1);
         this.changeScoreBy(-1);
     }
@@ -133,12 +134,19 @@ export class Post{
         // console.log('creating post at',Post.posts.length, title, body);
         return new Post(Post.posts.length, userid, title, parseBody(body));
     }
-    destroy(){
+    clickDestroy(){
         fetch(`${api}/posts/${this.id}`,{method:'delete'})
             .then(r=>{
-                corktaint.posts.splice(this.id,1);
-                corktaint.refresh();
+                socket.destroy({type:'post',id:this.id});
+                this.destroy();
             });
+    }
+    destroy(){
+        Post.posts[this.id]=undefined;
+        const index = corktaint.posts.indexOf(this);
+        if(index==-1)return;
+        corktaint.posts.splice(index,1);
+        corktaint.refresh();
     }
     async changeScoreBy(i=1){
         return fetch(`${api}/posts/${this.id}`,{
@@ -154,6 +162,7 @@ export class Post{
             body:JSON.stringify({body})
         }).then(()=>this.body = Content.parse(body))
         .then(r=>{
+            socket.edit({type:'post',id:this.id},{body})
             corktaint.reply = null;
             corktaint.refresh();
         });
@@ -211,6 +220,9 @@ export class Post{
         this.hide=!this.hide;
         corktaint.refresh();
     }
+    inView(){
+        return corktaint.posts.includes(this);
+    }
 }
 // id serial primary key,
 // broadcast varchar(32) default 'Public',
@@ -224,7 +236,7 @@ export class Comment{
         if(!body.length) Object.assign(this,id);
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
-        ['like','unlike','clickEdit','destroy','reply','toggleHide'].forEach(f=>this[f]=this[f].bind(this));
+        ['like','unlike','clickEdit','clickDestroy','reply','toggleHide'].forEach(f=>this[f]=this[f].bind(this));
         comments[this.id] = this;
     }
     static comments = {};
@@ -247,7 +259,7 @@ export class Comment{
                             {[ !_like ? <span className='link' onClick={this.like}>Like</span> : <span className='link' onClick={()=>this.unlike(_like)}>Unlike</span>,
                                 <span className='link' onClick={()=>this.reply()}> Reply</span>,
                                 corktaint.user.id == this.userid || corktaint.user.admin ?
-                                    <><span className='link' onClick={this.clickEdit}> Edit</span> | <span className='link' onClick={this.destroy} > Delete</span></> : null
+                                    <><span className='link' onClick={this.clickEdit}> Edit</span> | <span className='link' onClick={this.clickDestroy} > Delete</span></> : null
                             ].filter(a=>a).reduce((a,c,i,arr)=>a.concat(c,i<arr.length-1?<> | </>:undefined),[])}
                         </div>
                         { corktaint.reply==this && this.replyMode=='reply' ?<Reply value={this.replyMode=='reply'?null:Content.fullValues(this.body).join('\n')}/>:null}
@@ -258,8 +270,19 @@ export class Comment{
             </div>
     }
     get desc(){return trim(Content.fullValues(this.body.slice(0,3)).join(''))}
+    parentPostInstant(){
+        if(this._parentPost)return this._parentPost;
+        if(this.parent){
+            if(typeof this.parent == 'Comment')return this._parentPost = this.parent.parentPostInstant();
+            else return this.parent;
+        }
+    }
     async parentPost(){
         if(this._parentPost)return this._parentPost;
+        if(this.parent){
+            if(typeof this.parent == 'Comment')return this._parentPost = this.parent.parentPost();
+            else return this.parent;
+        }
         const response = await (await (await fetch(`${api}/comment/parent/${this.id}`)).json());
         if(response.type=='comment'){
             const comment = await Comment.get(response.parentid)
@@ -274,13 +297,16 @@ export class Comment{
         this.hide = !this.hide;
         corktaint.refresh();
     }
+    inView(){
+        return this.parentPostInstant().inView();
+    }
     unlike(like){
-        Like.deleteLike(like,this);
+        Like.deleteLikeInDatabase(this,like);
         User.users[this.userid].changeScoreBy(-1);
         this.changeScoreBy(-1);
     }
     like(){
-        Like.likeObj(this);
+        Like.likeObjInDatabase(this);
         User.users[this.userid].changeScoreBy(1);
         this.changeScoreBy(1);
     }
@@ -301,12 +327,17 @@ export class Comment{
         this.replyMode = 'edit';
         corktaint.refresh();
     }
-    destroy(){
+    clickDestroy(){
         fetch(`${api}/comments/${this.id}`,{method:'delete'})
             .then(r=>{
-                this.parent.comments.splice(this.parent.comments.indexOf(this),1);
-                corktaint.refresh();
+                this.destroy();
+                socket.destroy({type:'comment',id:this.id});
             });
+    }
+    destroy(){
+        Comment.comments[this.id]=undefined;
+        this.parent.comments.splice(this.parent.comments.indexOf(this),1);
+        if(this.inView())corktaint.refresh();
     }
     edit(body){
         return fetch(`${api}/comments/${this.id}`,{
@@ -315,6 +346,7 @@ export class Comment{
             body:JSON.stringify({body})
         }).then(()=>this.body = Content.parse(body))
         .then(r=>{
+            socket.edit({type:'comment',id:this.id},{body})
             corktaint.reply = null;
             corktaint.refresh();
         });
@@ -336,19 +368,23 @@ export class Comment{
             })).concat(comments.map(c=>Like.getLikesFor(c)));
         return [comments, promises]
     }
-    static async addCommentTo(obj,body){
-        return fetch(`${api}/comments/${obj.constructor.name.toLowerCase()}s/${obj.id}`,{
+    static async submitCommentToDatabase(obj,body){
+        const type=obj.constructor.name.toLowerCase();
+        return fetch(`${api}/comments/${type}s/${obj.id}`,{
             method:'post',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body,userid:corktaint.user.id})
         }).then(r=>r.json()).then(r=>{
-            var c=new Comment(r[0]);
-            c.parent=obj;
-            return obj.comments.push(c);
-        }).then(r=>{
             corktaint.reply = null;
-            corktaint.refresh();
+            Comment.addCommentTo(obj,r[0]);
+            socket.addCommentTo({type,id:obj.id},r[0]);
         });
+    }
+    static addCommentTo(parent, comment){
+        comment = new Comment(comment);
+        comment.parent = parent;
+        parent.comments.push(comment);
+        if(parent.inView())corktaint.refresh();
     }
 }
 export class Like{
@@ -362,24 +398,34 @@ export class Like{
             .then(r=>r.json())
             .then(likes=>Object.assign(obj,{likes,likesLoaded:true}));
     }
-    static likeObj(obj){
+    static likeObjInDatabase(obj){
         // console.log('firing like on ',obj,obj.id);
-        return fetch(`${api}/likes/${obj.constructor.name.toLowerCase()}s/${obj.id}`,{
+        const type = obj.constructor.name.toLowerCase();
+        return fetch(`${api}/likes/${type}s/${obj.id}`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({userid:corktaint.user.id})
-        }).then(r=>r.json()).then(r=>{
-            obj.likes = obj.likes.concat(r);
-            corktaint.refresh();
+        }).then(r=>r.json()).then(like=>{
+            Like.likeObj(obj, like);
+            socket.likeObj({type:type,id:obj.id}, like);
         });
     }
-    static deleteLike(like,obj){
+    static likeObj(obj, like){
+        obj.likes = obj.likes.concat(like);
+        if(obj.inView())corktaint.refresh();
+    }
+    static deleteLikeInDatabase(obj, like){
         // console.log('firing delete like on',obj,obj.id);
+        const type = obj.constructor.name.toLowerCase();
         return fetch(`${api}/likes/${like.id}`,{method:'DELETE'})
-            .then(r=>{
-                obj.likes.splice(obj.likes.findIndex(a=>a.id==like.id),1);
-                corktaint.refresh();
-            })
+        .then(r=>{
+            Like.deleteLike(obj, like);
+            socket.deleteLike({type:type,id:obj.id}, like);
+        })
+    }
+    static deleteLike(obj, like){
+        obj.likes.splice(obj.likes.findIndex(a=>a.id==like.id),1);
+        if(obj.inView())corktaint.refresh();
     }
 }
 export class Content{
@@ -398,6 +444,7 @@ export class Content{
             case 'text':default:return <p className='content content-text' key={i}>{this.content}</p>
         }
     }
+    //
     static parse(val,parent){
         if(Array.isArray(val))return val.map(a=>Content.parse(a,parent));
         let match = (val.match(/(\[(.*?)\]\((.*?)\))/)||[]).slice(2);
@@ -463,3 +510,46 @@ export async function uploadToBucket(files, onUpload, onComplete){
         val.push(x);
     }
 }
+Object.assign(socket, {
+    containers:{
+        'post':Post.posts,
+        'user':User.users,
+        'comment':Comment.comments
+    },
+    types:{
+        'post':Post,
+        'user':User,
+        'comment':Comment,
+    },
+    tryGet:(obj) =>socket.containers[obj.type][obj.id],
+    submitNewPost: post => socket.emit('rebroadcast','submitNewPost',post),
+    changeScoreBy:(obj, data) => socket.emit('rebroadcast','changeScoreBy', obj, data),
+    destroy: obj => socket.emit('rebroadcast', 'destroy', obj),
+    edit: (obj, data) => socket.emit('rebroadcast', 'edit', obj, data),
+    addCommentTo: (obj, data) => socket.emit('rebroadcast', 'addCommentTo', obj, data),
+    likeObj: (obj, like) => socket.emit('rebroadcast','likeObj',obj, like),
+    deleteLike: (obj, like) => socket.emit('rebroadcast','deleteLike', obj, like)
+})
+socket.on('edit',(obj, data)=>{
+    obj = socket.tryGet(obj);
+    if(!obj)return;
+    Object.assign(obj,{body:Content.parse(data.body)});
+    if(obj.inView())corktaint.refresh();
+});
+socket.on('addCommentTo',(parent, comment)=>{
+    parent = socket.tryGet(parent);
+    if(!parent)return;
+    Comment.addCommentTo(parent, comment);
+});
+socket.on('destroy',(obj)=>{
+    if(!(obj = socket.tryGet(obj)))return;
+    obj.destroy();
+});
+socket.on('likeObj',(obj, like)=>{
+    if(!(obj = socket.tryGet(obj)))return;
+    Like.likeObj(obj, like);
+});
+socket.on('deleteLike',(obj, like)=>{
+    if(!(obj = socket.tryGet(obj)))return;
+    Like.deleteLike(obj, like);
+});
