@@ -2,6 +2,7 @@
   "name": "wine-map",
   "version": "0.1.0",
   "private": true,
+  "homepage": "http://corktaint.s3-website-us-east-1.amazonaws.com/",
   "dependencies": {
     "@material-ui/core": "^4.11.1",
     "@material-ui/icons": "^4.9.1",
