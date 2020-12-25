@@ -29,13 +29,23 @@ export default function Discover() {
             }
         }
     }
+    const option = {
+        from:{maxWidth:'20px',background:'var(--primary-color)',position:'fixed',left:0,height:'100%'},
+        to:{maxWidth:'1000px', background:'none'}
+    }
     const [newPostButton, setNewPostButton] = useSpring(() => button.from);
     const [newImageButton, setNewImageButton] = useSpring(() => button.from);
     const [newMapButton, setNewMapButton] = useSpring(() => button.from);
     const [moreButtons, setMoreButtons] = useState(false);
+    const [options, setOptions] = useState(false);
+    const [optionAnimation, setOptionAnimation] = useSpring(()=>option.from);
+    const hideOptions = () => setOptions(false);
+    const showOptions = () => setOptions(true);
+    useEffect(()=>setOptionAnimation(options?option.to:option.from));
+
     let [page, setPage] = useState(<></>);
+    Object.assign(corktaint, { setPage });
     useEffect(() => {
-        Object.assign(corktaint, { setPage });
         if (corktaint.scrollTo) {
             Scroll.scroller.scrollTo('scroll', {
                 delay: 100,
@@ -70,6 +80,7 @@ export default function Discover() {
     const [discoverPage, setDiscoverPage] = useState(1);
     useEffect(() => {
         setPage(<></>);
+        corktaint.view=`/discover/${trends[currentTrend]}`;
         console.log('fetching',`${api}/user/${corktaint.user.id}/feed/posts/${trends[currentTrend]}/${discoverPage}`);
         fetch(`${api}/user/${corktaint.user.id}/feed/posts/${trends[currentTrend]}/${discoverPage}`)
             .then(r => r.json())
@@ -80,7 +91,7 @@ export default function Discover() {
             });
     }, [currentTrend]);
     return <div className='discover-row row'>
-        <div className='discover-options-container'>
+        <animated.div className='discover-options-container' style={optionAnimation} onMouseEnter={showOptions} onMouseLeave={hideOptions}>
             <div className='discover-options col'>
                 <h2>Discover Options:</h2>
                     <h5>Trend</h5>
@@ -88,7 +99,7 @@ export default function Discover() {
                         {trends.map((t,i)=><span key={i}><span className={`trend-link link ${currentTrend==i?'active':''}`} onClick={setTrend} data-trend={i}>{t}</span> {i+1==trends.length?null:<span> | </span>} </span>)}
                     </span>
             </div>
-        </div>
+        </animated.div>
         <div className='page-wrapper col'>
             {corktaint.reply == home ? <div className='reply-wrapper'><Reply /></div> :
                 <><div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>

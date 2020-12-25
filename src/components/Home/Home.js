@@ -1,13 +1,13 @@
 import WineMap from '../WineMap/WineMap';
 import {corktaint } from "../Helper";
-import {Switch, Route} from 'react-router-dom';
+import {Switch, Route, useLocation} from 'react-router-dom';
 import Leaderboard from "../Leaderboard/Leaderboard";
 import SingleUser from "../SingleUser/SingleUser";
 import SinglePost from "../SinglePost/SinglePost";
 import Discover from "./Discover";
-import socket from 'socket.io-client';
 
 export default function Home(props){
+    corktaint.view=useLocation().pathname;
     return (
         <div className='home main-container open-container col' name='New Post'>
             <Switch>

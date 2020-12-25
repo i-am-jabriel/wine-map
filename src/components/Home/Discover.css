@@ -2,9 +2,9 @@
     width:500px;
     position: relative;
     top:100px;
+    overflow: hidden;
 }
 .discover-options{
-    position:fixed;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     border:1px solid black;

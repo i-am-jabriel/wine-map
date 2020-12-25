@@ -1,6 +1,5 @@
-import logo from './logo.svg';
 import './App.css';
-import {Switch, Route, BrowserRouter as Router} from 'react-router-dom';
+import {MemoryRouter as Router} from 'react-router-dom';
 import Home from './components/Home/Home';
 import Login from './components/Login/Login';
 import Navbar from './components/Navbar/Navbar';

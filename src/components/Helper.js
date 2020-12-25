@@ -5,10 +5,9 @@ import Rating from '@material-ui/lab/Rating';
 import Chip from '@material-ui/core/Chip';
 import {Link} from 'react-router-dom';
 import Carousel from './Carousel/Carousel';
-import { useSpring } from "react-spring";
 import {aws} from '../secret';
-import AWS from 'aws-sdk';
 import {socket} from '../socket';
+import ReactPlayer from 'react-player/lazy'
 
 export const api = 'http://localhost:2999';
 export const mod = (a,b) => ((a%b)+b)%b;
@@ -39,11 +38,16 @@ export class User{
             .then(r=>r.json()).then(r=>new User(r[0]))
     }
     async changeScoreBy(i=1){
+        const data = {score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)};
         return fetch(`${api}/users/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
-        });
+            body:JSON.stringify(data),
+        })
+        .then(r=>socket.changeScoreBy({type:'user',id:this.id},data))
+    }
+    changeScoreByFromSocket(data){
+       Object.assign(this,data); 
     }
     get avatar(){return <Avatar>{this.name[0]}</Avatar>}
 }
@@ -149,11 +153,15 @@ export class Post{
         corktaint.refresh();
     }
     async changeScoreBy(i=1){
+        const data={score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)};
         return fetch(`${api}/posts/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
-        });
+            body:JSON.stringify(data)
+        }).then(r=>socket.changeScoreBy({type:'post',id:this.id},data))
+    }
+    changeScoreByFromSocket(data){
+       Object.assign(this,data); 
     }
     edit(body){
         return fetch(`${api}/posts/${this.id}`,{
@@ -167,13 +175,20 @@ export class Post{
             corktaint.refresh();
         });
     }
+    static addNewPost(post){
+        if(corktaint.view=='/discover/recent'){
+            corktaint.posts.unshift(new Post(post));
+            corktaint.refresh();
+        }
+    }
     static submitNewPost(title,body){
         return fetch(`${api}/posts`,{
             method:'post',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({userid:corktaint.user.id,body,title}),
         }).then(r=>r.json()).then(r=>{
-            corktaint.posts.unshift(new Post(r[0]));
+            Post.addNewPost(r[0]);
+            socket.addNewPost(r[0]);
             // console.log(corktaint.posts[corktaint.posts.length-1]);
             corktaint.reply = null;
             corktaint.refresh();
@@ -253,7 +268,7 @@ export class Comment{
                     <div className='hide-comment-wrapper'><Tooltip title={this.hide?'Show':'Hide'} placement='top'><span className='hide-comment-button link' onClick={this.toggleHide}>[{this.hide?'+':'-'}]</span></Tooltip></div>
                     {this.hide?null:<>
                         <Link className='comment-author' to={`/user/${this.userid}`}>{User.users[this.userid].name}</Link>
-                        {this.body.map((c,i)=>c.render(i))}
+                        {corktaint.reply==this&&this.replyMode=='edit'?<Reply value={Content.fullValues(this.body).join('\n')}/>:this.body.map((c,i)=>c.render(i))}
                         {this.likes.length ? <span className='comment-like-count' onClick={_like?()=>this.unlike(_like):this.like}>{this.likes.length}<Tooltip title={_like?'Unlike':'Like'} placement='top'><span>❤️</span></Tooltip></span> : null}
                         <div className='comment-options'>
                             {[ !_like ? <span className='link' onClick={this.like}>Like</span> : <span className='link' onClick={()=>this.unlike(_like)}>Unlike</span>,
@@ -262,7 +277,7 @@ export class Comment{
                                     <><span className='link' onClick={this.clickEdit}> Edit</span> | <span className='link' onClick={this.clickDestroy} > Delete</span></> : null
                             ].filter(a=>a).reduce((a,c,i,arr)=>a.concat(c,i<arr.length-1?<> | </>:undefined),[])}
                         </div>
-                        { corktaint.reply==this && this.replyMode=='reply' ?<Reply value={this.replyMode=='reply'?null:Content.fullValues(this.body).join('\n')}/>:null}
+                        { corktaint.reply==this && this.replyMode=='reply' && <Reply/>}
                         <div className='comment-chain'>
                             {this.comments.map((c)=>c.render())}
                         </div>
@@ -316,11 +331,15 @@ export class Comment{
         corktaint.refresh();
     }
     async changeScoreBy(i=1){
+        const data = {score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)};
         return fetch(`${api}/comments/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({score:this.score+=i,lastaction:'now()',trend:increment(this.trend,i)})
-        });
+            body:JSON.stringify(data)
+        }).then(r=>socket.changeScoreBy({type:'comment',id:this.id},data))
+    }
+    changeScoreByFromSocket(data){
+       Object.assign(this,data); 
     }
     clickEdit(){
         corktaint.reply=corktaint.reply!=this?this:null;
@@ -441,7 +460,8 @@ export class Content{
                 const l  = this.content.split(',');
                 if(l.length>1)return <Carousel images={l} key={i}/>
                 return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
-            case 'text':default:return <p className='content content-text' key={i}>{this.content}</p>
+            case 'youtube':case 'twitch': case 'facebook':case 'soundcloud':case 'media':  return <ReactPlayer url={this.content} key={i} className={`post-media-content media-${this.type}`}/>
+            case 'text': default:return <p className='content content-text' key={i}>{this.content}</p>
         }
     }
     //
@@ -522,7 +542,7 @@ Object.assign(socket, {
         'comment':Comment,
     },
     tryGet:(obj) =>socket.containers[obj.type][obj.id],
-    submitNewPost: post => socket.emit('rebroadcast','submitNewPost',post),
+    addNewPost: post => socket.emit('rebroadcast','addNewPost',post),
     changeScoreBy:(obj, data) => socket.emit('rebroadcast','changeScoreBy', obj, data),
     destroy: obj => socket.emit('rebroadcast', 'destroy', obj),
     edit: (obj, data) => socket.emit('rebroadcast', 'edit', obj, data),
@@ -553,3 +573,10 @@ socket.on('deleteLike',(obj, like)=>{
     if(!(obj = socket.tryGet(obj)))return;
     Like.deleteLike(obj, like);
 });
+socket.on('addNewPost', (post) =>{
+    Post.addNewPost(post);
+});
+socket.on('changeScoreBy', (obj, data) =>{
+    if(!(obj = socket.tryGet(obj)))return;
+    obj.changeScoreByFromSocket(data);
+})
