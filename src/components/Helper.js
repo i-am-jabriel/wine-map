@@ -1,4 +1,4 @@
-import { Avatar, Button, Fab, Tooltip } from "@material-ui/core";
+import { Avatar, Fab, Tooltip } from "@material-ui/core";
 import { Add, Close, Remove } from "@material-ui/icons"
 import Reply from "./Reply/Reply";
 import Rating from '@material-ui/lab/Rating';
@@ -9,7 +9,8 @@ import {aws} from '../secret';
 import {socket} from '../socket';
 import ReactPlayer from 'react-player/lazy'
 
-export const api = 'http://localhost:2999';
+// export const api = 'http://localhost:2999';
+export const api = 'http://ec2-54-198-43-159.compute-1.amazonaws.com:2999';
 export const mod = (a,b) => ((a%b)+b)%b;
 export const zero = n => n <= 9?`0${n}`:n;
 export const sqlDateToJavascript = n =>{
