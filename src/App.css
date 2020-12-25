@@ -15,6 +15,7 @@ html{
     --link-color:#EBD57C;
     --link-hover-color:#fff;
     --primary-shade:#5B5DAB;
+    --primary-shade-rgba:rgb(91, 93, 171,1);
     --primary-black:#393A6B;
     --secondary-shade:#AB9B5B;
     --secondary-black:#6B6139;
@@ -36,6 +37,12 @@ a,.link{
 }
 a:hover,.link:hover,a.active,.link.active{
     color:var(--secondary-color);
+}
+.Mui-disabled{
+    filter:grayscale(0.9);
+}
+.login-container .MuiFormControl-root{
+    margin:5px!important;
 }
 .MuiFab-primary,.MuiButton-containedPrimary,button{
     color:white!important;
@@ -68,6 +75,11 @@ a:hover,.link:hover,a.active,.link.active{
     display:flex;
     justify-content: center;
 }
+.row-center{
+    display:flex;
+    justify-content: center;
+    align-items: center;
+}
 .space-around{
     justify-content: space-around;
     width:100%;
@@ -90,6 +102,11 @@ a:hover,.link:hover,a.active,.link.active{
 }
 .login-container{
     padding:60px 0;
+}
+.sign-up-form{
+    padding:30px 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
 }
 .sign-up-form input{
     width:250px;

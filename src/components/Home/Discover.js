@@ -30,8 +30,8 @@ export default function Discover() {
         }
     }
     const option = {
-        from:{maxWidth:'20px',background:'var(--primary-color)',position:'fixed',left:0,height:'100%'},
-        to:{maxWidth:'1000px', background:'none'}
+        from:{maxWidth:'20px',background:'rgb(91, 93, 171,1)',position:'fixed',left:0,height:'100%'},
+        to:{maxWidth:'1000px', background:'rgba(0,0,0,0)',zIndex:6}
     }
     const [newPostButton, setNewPostButton] = useSpring(() => button.from);
     const [newImageButton, setNewImageButton] = useSpring(() => button.from);
