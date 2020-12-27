@@ -8,6 +8,7 @@ import Carousel from './Carousel/Carousel';
 import {aws} from '../secret';
 import {socket} from '../socket';
 import ReactPlayer from 'react-player/lazy'
+import MediaPlayer from "./MediaPlayer/MediaPlayer";
 
 // export const api = 'http://localhost:2999';
 export const api = 'http://ec2-54-198-43-159.compute-1.amazonaws.com:2999';
@@ -23,6 +24,7 @@ export const parseBody = body =>
 export const increment = (o,i=1) => {Object.keys(o).forEach(k=>o[k]=(o[k]||0)+i);return o}
 export class User{  
     constructor(id, name, email, achievements, score){
+        Object.assign(this,{type:'user'});
         if(!name) Object.assign(this,id);
         else Object.assign(this, {id, name, email, achievements, score});
         User.users[`${this.id}`] = this;
@@ -55,7 +57,7 @@ export class User{
 
 export class Post{
     constructor(id,userId,title,body = [], comments=[],postDate){
-        Object.assign(this,{comments:[],body:[],likes:[],hide:false});
+        Object.assign(this,{comments:[],body:[],likes:[],hide:false,type:'post'});
         if(!userId) Object.assign(this,id);
         else Object.assign(this,{id, userId,title,comments,body,postDate});
         this.body = Content.parse(this.body);
@@ -140,11 +142,8 @@ export class Post{
         return new Post(Post.posts.length, userid, title, parseBody(body));
     }
     clickDestroy(){
-        fetch(`${api}/posts/${this.id}`,{method:'delete'})
-            .then(r=>{
-                socket.destroy({type:'post',id:this.id});
-                this.destroy();
-            });
+        this.destroy();
+        fetch(`${api}/posts/${this.id}`,{method:'delete'}).then(r=>socket.destroy({type:'post',id:this.id}))
     }
     destroy(){
         Post.posts[this.id]=undefined;
@@ -165,16 +164,14 @@ export class Post{
        Object.assign(this,data); 
     }
     edit(body){
+        corktaint.reply = null;
+        this.body = Content.parse(body);
+        corktaint.refresh();
         return fetch(`${api}/posts/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body})
-        }).then(()=>this.body = Content.parse(body))
-        .then(r=>{
-            socket.edit({type:'post',id:this.id},{body})
-            corktaint.reply = null;
-            corktaint.refresh();
-        });
+        }).then(r=>socket.edit({type:'post',id:this.id},{body}))
     }
     static addNewPost(post){
         if(corktaint.view=='/discover/recent'){
@@ -183,6 +180,8 @@ export class Post{
         }
     }
     static submitNewPost(title,body){
+        corktaint.reply = null;
+        corktaint.refresh();
         return fetch(`${api}/posts`,{
             method:'post',
             headers:{'Content-Type':'application/json'},
@@ -191,8 +190,6 @@ export class Post{
             Post.addNewPost(r[0]);
             socket.addNewPost(r[0]);
             // console.log(corktaint.posts[corktaint.posts.length-1]);
-            corktaint.reply = null;
-            corktaint.refresh();
         })
     }
     getComments(){
@@ -225,9 +222,7 @@ export class Post{
     static async from(a){
         let posts = a.map(p=>Post.get(p.id,p));
         posts = await Promise.all(posts);
-        console.log('here is posts',posts);
         posts = await Post.greedyLoad(posts);
-        console.log('finished promises',posts,corktaint,User.users);
         /*corktaint.posts=posts;
         corktaint.refresh();*/
         return posts;
@@ -248,7 +243,7 @@ export class Post{
 // postDate timestamp NOT NULL DEFAULT NOW()
 export class Comment{
     constructor(id, body = [], userid, comments = [], postdate = ''){
-        Object.assign(this,{body:[],comments:[],likes:[]});
+        Object.assign(this,{body:[],comments:[],likes:[],type:'comment'});
         if(!body.length) Object.assign(this,id);
         else Object.assign(this,{id, body, userid, comments, postdate});
         this.body = Content.parse(this.body, this);
@@ -337,7 +332,7 @@ export class Comment{
             method:'put',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify(data)
-        }).then(r=>socket.changeScoreBy({type:'comment',id:this.id},data))
+        }).then(r=>socket.changeScoreBy({type:'comment',id:this.id},data));
     }
     changeScoreByFromSocket(data){
        Object.assign(this,data); 
@@ -348,11 +343,8 @@ export class Comment{
         corktaint.refresh();
     }
     clickDestroy(){
-        fetch(`${api}/comments/${this.id}`,{method:'delete'})
-            .then(r=>{
-                this.destroy();
-                socket.destroy({type:'comment',id:this.id});
-            });
+        this.destroy();
+        fetch(`${api}/comments/${this.id}`,{method:'delete'}).then(r=> socket.destroy({type:'comment',id:this.id}))
     }
     destroy(){
         Comment.comments[this.id]=undefined;
@@ -360,15 +352,15 @@ export class Comment{
         if(this.inView())corktaint.refresh();
     }
     edit(body){
+        corktaint.reply = null;
+        this.body = Content.parse(body);
+        corktaint.refresh();
         return fetch(`${api}/comments/${this.id}`,{
             method:'put',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body})
-        }).then(()=>this.body = Content.parse(body))
-        .then(r=>{
-            socket.edit({type:'comment',id:this.id},{body})
-            corktaint.reply = null;
-            corktaint.refresh();
+        }).then(r=>{
+            socket.edit({type:'comment',id:this.id},{body});
         });
     }
     static from(a, i, set){
@@ -389,13 +381,14 @@ export class Comment{
         return [comments, promises]
     }
     static async submitCommentToDatabase(obj,body){
-        const type=obj.constructor.name.toLowerCase();
+        corktaint.reply = null;
+        corktaint.refresh();
+        const type=obj.type||obj.constructor.name.toLowerCase();
         return fetch(`${api}/comments/${type}s/${obj.id}`,{
             method:'post',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({body,userid:corktaint.user.id})
         }).then(r=>r.json()).then(r=>{
-            corktaint.reply = null;
             Comment.addCommentTo(obj,r[0]);
             socket.addCommentTo({type,id:obj.id},r[0]);
         });
@@ -414,21 +407,24 @@ export class Like{
     static getLikesFor(obj){
         // console.log('atempting to get likes for',obj.constructor.name,' id',obj.id);
         if(obj.likesLoaded)return true;
-        return fetch(`${api}/likes/${obj.constructor.name.toLowerCase()}s/${obj.id}`)
+        const type=obj.type||obj.constructor.name.toLowerCase();
+        console.warn('attempting to like ',type,obj.id);
+        return fetch(`${api}/likes/${type}s/${obj.id}`)
             .then(r=>r.json())
             .then(likes=>Object.assign(obj,{likes,likesLoaded:true}));
     }
     static likeObjInDatabase(obj){
         // console.log('firing like on ',obj,obj.id);
-        const type = obj.constructor.name.toLowerCase();
+        const type = obj.type||obj.constructor.name.toLowerCase();
+        const likeData = {userid:corktaint.user.id};
+        Like.likeObj(obj, likeData);
         return fetch(`${api}/likes/${type}s/${obj.id}`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({userid:corktaint.user.id})
+            body:JSON.stringify(likeData)
         }).then(r=>r.json()).then(like=>{
-            Like.likeObj(obj, like);
             socket.likeObj({type:type,id:obj.id}, like);
-        });
+        }).catch(e=>Like.deleteLike(obj, likeData));
     }
     static likeObj(obj, like){
         obj.likes = obj.likes.concat(like);
@@ -436,12 +432,12 @@ export class Like{
     }
     static deleteLikeInDatabase(obj, like){
         // console.log('firing delete like on',obj,obj.id);
-        const type = obj.constructor.name.toLowerCase();
+        const type = obj.type||obj.constructor.name.toLowerCase();
+        Like.deleteLike(obj, like);
         return fetch(`${api}/likes/${like.id}`,{method:'DELETE'})
         .then(r=>{
-            Like.deleteLike(obj, like);
             socket.deleteLike({type:type,id:obj.id}, like);
-        })
+        }).catch(e=>Like.likeObj(obj, like))
     }
     static deleteLike(obj, like){
         obj.likes.splice(obj.likes.findIndex(a=>a.id==like.id),1);
@@ -451,6 +447,10 @@ export class Like{
 export class Content{
     constructor(content, type = 'text', title, parent, fullValue){
         Object.assign(this, {content, type, title, parent, fullValue});
+        this.onClick=()=>{
+            if(!this.active)corktaint.openPlayer(this);
+            else corktaint.player.togglePause();
+        }
     }
     render(i){
         // console.log('content #'+this.id+' needs value');
@@ -461,9 +461,18 @@ export class Content{
                 const l  = this.content.split(',');
                 if(l.length>1)return <Carousel images={l} key={i}/>
                 return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
-            case 'youtube':case 'twitch': case 'facebook':case 'soundcloud':case 'media':  return <ReactPlayer url={this.content} key={i} className={`post-media-content media-${this.type}`}/>
+            case 'youtube':case 'twitch': case 'facebook':case 'soundcloud':case 'media':  
+                return <MediaPlayer content={this.content} active={this.active} openPlayer={this.onClick} key={i} type={this.type}/>
             case 'text': default:return <p className='content content-text' key={i}>{this.content}</p>
         }
+    }
+    static active = null;
+    setActive(){
+        if(Content.active){
+            Content.active.active=false;
+            Content.active=this;
+        }
+        this.active=true;
     }
     //
     static parse(val,parent){
@@ -494,6 +503,7 @@ export const corktaint ={
         // console.log('refreshing',corktaint.user,User.users);
         corktaint.setPage(Post.render(corktaint.posts));
     },
+    player:{},
     reply:null,
     posts:[],
     User,

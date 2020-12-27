@@ -3,6 +3,8 @@
     position: relative;
     top:100px;
     overflow: hidden;
+    height:250px;
+    box-sizing: border-box;
 }
 .discover-options{
     border-radius: var(--border-radius);

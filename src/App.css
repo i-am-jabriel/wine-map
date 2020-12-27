@@ -173,6 +173,7 @@ a:hover,.link:hover,a.active,.link.active{
     max-height:500px;
 }
 .post-media-content{
+    pointer-events: none;
     max-width: 420px;
     max-height:300px;
 }

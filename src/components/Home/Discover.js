@@ -1,6 +1,6 @@
 import { Fab, Tooltip } from "@material-ui/core";
 import { Edit, Add, Image, Map } from "@material-ui/icons"
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Reply from '../Reply/Reply';
 import { useSpring, animated } from 'react-spring';
 import Scroll from 'react-scroll';
@@ -30,8 +30,8 @@ export default function Discover() {
         }
     }
     const option = {
-        from:{maxWidth:'20px',background:'rgb(91, 93, 171,1)',position:'fixed',left:0,height:'100%'},
-        to:{maxWidth:'1000px', background:'rgba(0,0,0,0)',zIndex:6}
+        from:{maxWidth:'20px',position:'fixed',left:0,zIndex:6},
+        to:{maxWidth:'1000px',marginRight:'60px'}
     }
     const [newPostButton, setNewPostButton] = useSpring(() => button.from);
     const [newImageButton, setNewImageButton] = useSpring(() => button.from);
@@ -76,20 +76,45 @@ export default function Discover() {
     //const trends = ['recent', 'hour', 'day', 'week', 'month', 'year', 'all-time'];
     const trends = ['recent', 'hour', 'day', 'week', 'month', 'all-time'];
     const [currentTrend, setCurrentTrend] = useState(0);
-    const setTrend = e => setCurrentTrend(e.target.dataset.trend);
+    const setTrend = e =>{
+        setDiscoverPage(1);
+        setCurrentTrend(e.target.dataset.trend);
+    }
+
     const [discoverPage, setDiscoverPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const container = useRef();
+
     useEffect(() => {
-        setPage(<></>);
+        if(loading)return;
+        const offset = 2000;
+        const onScroll = e => {
+            // console.log(loading, e.target.documentElement.scrollTop + offset, container.current.offsetHeight);
+            if(e.target.documentElement.scrollTop + offset >= container.current.offsetHeight && !loading){
+                window.removeEventListener("scroll", onScroll);
+                console.log('loading more content onto',discoverPage+5);
+                setDiscoverPage(discoverPage+5);
+                setLoading(true);
+            }
+        };
+        window.addEventListener("scroll", onScroll);
+    
+        return () => window.removeEventListener("scroll", onScroll);
+      }, [discoverPage,loading]);
+    useEffect(() => {
+        if(discoverPage==1)setPage(<></>);
+        setLoading(true);
         corktaint.view=`/discover/${trends[currentTrend]}`;
         console.log('fetching',`${api}/user/${corktaint.user.id}/feed/posts/${trends[currentTrend]}/${discoverPage}`);
         fetch(`${api}/user/${corktaint.user.id}/feed/posts/${trends[currentTrend]}/${discoverPage}`)
             .then(r => r.json())
             .then(r => Post.from(r))
             .then(p =>{
-                corktaint.posts=p;
+                setLoading(!p.length);
+                corktaint.posts = discoverPage==1?p:corktaint.posts.concat(p);
                 corktaint.refresh();
             });
-    }, [currentTrend]);
+    }, [currentTrend, discoverPage]);
     return <div className='discover-row row'>
         <animated.div className='discover-options-container' style={optionAnimation} onMouseEnter={showOptions} onMouseLeave={hideOptions}>
             <div className='discover-options col'>
@@ -100,7 +125,7 @@ export default function Discover() {
                     </span>
             </div>
         </animated.div>
-        <div className='page-wrapper col'>
+        <div className='page-wrapper col' ref={container}>
             {corktaint.reply == home ? <div className='reply-wrapper'><Reply /></div> :
                 <><div className='main-button-hover' onMouseLeave={hideButtons}><div className='main-button'>
                     <Fab color="primary" aria-label="add" onClick={moreButtons ? showPost : showButtons} onMouseEnter={showButtons}>

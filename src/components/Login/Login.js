@@ -12,25 +12,33 @@ export default function Login(props){
         props.setUser(true);
     }
     const responseGoogle = r =>{
+        if(!r||!r.profileObj)return;
         const {name, givenName, familyName, email} = r.profileObj;
         setEmail(email);
         setName(name || `${givenName} ${familyName}`);
         fetchUserWithEmail(email);
     }
-    const fetchUserWithEmail = email =>{
+    const setLoginCookie = (email) => {
         const date = new Date();
-        date.setDate(date.getDate() + 7);
+        date.setDate(date.getDate() + 14);
         Cookie.set('email',email,date);
+    }
+    const fetchUserWithEmail = async email =>{
+        setLoginCookie(email);
         corktaint.logOut=()=>{
             Cookie.delete('email');
             corktaint.user=null;
             props.setUser(false);
         }
-        fetch(`${api}/userWithEmail/${email}`).then(r=>r.json()).then(r=>r[0]&&setUser(r[0]));
+        const user = await (await fetch(`${api}/userWithEmail/${email}`)).json();
+        if(user[0])setUser(user[0]);
+        return user[0];
     }    
 
-    const submit = () => {
-        if(name.length<3||email.length<3)return;
+    const submit = async () => {
+        setLoginCookie(email);
+        const exists = await fetchUserWithEmail(email);
+        if(name.length<1 || email.length<3 || exists)return;
         fetch(`${api}/users`,{
             headers:{'Content-Type':'application/json'},
             method:'post',
@@ -45,7 +53,6 @@ export default function Login(props){
 
     const cookieEmail = Cookie.get('email');
     if(cookieEmail)fetchUserWithEmail(cookieEmail);
-    console.log(document.cookie,cookieEmail);
    
     return <div className='col login-container'>
             {email==null?<div className='col'>
