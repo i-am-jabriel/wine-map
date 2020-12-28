@@ -19,8 +19,8 @@ export const sqlDateToJavascript = n =>{
     return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
 }
 export const trim = (s, i=40)=> s.length<i?s:s.substr(0,37)+'...';
-export const parseBody = body =>
-    [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x));
+export const parseBody = (body,parent) =>
+    [...body.replace(/\n\s*\n/g, '\n').split('\n')].map(x=>Content.parse(x,parent));
 export const increment = (o,i=1) => {Object.keys(o).forEach(k=>o[k]=(o[k]||0)+i);return o}
 export class User{  
     constructor(id, name, email, achievements, score){
@@ -60,7 +60,7 @@ export class Post{
         Object.assign(this,{comments:[],body:[],likes:[],hide:false,type:'post'});
         if(!userId) Object.assign(this,id);
         else Object.assign(this,{id, userId,title,comments,body,postDate});
-        this.body = Content.parse(this.body);
+        this.body = Content.parse(this.body, this);
         // console.log(arguments);
         Post.posts[`${this.id}`] = this;
         ['like','unlike','clickDestroy','clickEdit','clickReply','toggleHide'].forEach(m=>this[m]=this[m].bind(this));
@@ -139,7 +139,7 @@ export class Post{
     }
     static createPostFrom(userid,title,body){
         // console.log('creating post at',Post.posts.length, title, body);
-        return new Post(Post.posts.length, userid, title, parseBody(body));
+        return new Post(Post.posts.length, userid, title, body);
     }
     clickDestroy(){
         this.destroy();
@@ -165,7 +165,7 @@ export class Post{
     }
     edit(body){
         corktaint.reply = null;
-        this.body = Content.parse(body);
+        this.body = Content.parse(body, this);
         corktaint.refresh();
         return fetch(`${api}/posts/${this.id}`,{
             method:'put',
@@ -353,7 +353,7 @@ export class Comment{
     }
     edit(body){
         corktaint.reply = null;
-        this.body = Content.parse(body);
+        this.body = Content.parse(body,this);
         corktaint.refresh();
         return fetch(`${api}/comments/${this.id}`,{
             method:'put',
@@ -462,16 +462,17 @@ export class Content{
                 if(l.length>1)return <Carousel images={l} key={i}/>
                 return <img className='content content-img' src={this.content} alt={this.title||''} key={i}/>
             case 'youtube':case 'twitch': case 'facebook':case 'soundcloud':case 'media':  
-                return <MediaPlayer content={this.content} active={this.active} openPlayer={this.onClick} key={i} type={this.type}/>
+                return <MediaPlayer content={this.content} active={this.active&&corktaint.player.playing} openPlayer={this.onClick} key={i} type={this.type}/>
             case 'text': default:return <p className='content content-text' key={i}>{this.content}</p>
         }
     }
     static active = null;
     setActive(){
         if(Content.active){
+            console.log('removing currently active element');
             Content.active.active=false;
-            Content.active=this;
         }
+        Content.active=this;
         this.active=true;
     }
     //
@@ -507,7 +508,8 @@ export const corktaint ={
     reply:null,
     posts:[],
     User,
-    Post
+    Post,
+    Content
 };
 window.corktaint=corktaint;
 const readBlob = file => new Promise((resolve, reject) => {

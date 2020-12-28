@@ -38,8 +38,11 @@
 }
 .mini-player-title{
     position: absolute;
-    top:40px;
-    left: 120px;
+    font-size:0.7em;
+    top:30px;
+    left: 115px;
+    max-width:200px;
+    word-wrap: break;
 }
 .player-input-wrapper>span>svg{
     pointer-events: none;

@@ -1,5 +1,5 @@
 import { Tooltip } from '@material-ui/core';
-import { LiveTvRounded, Loop, PauseCircleOutline, PlayCircleOutline, Shuffle, SkipNext, SkipPrevious, VolumeMuteOutlined, VolumeUpOutlined } from '@material-ui/icons';
+import { AssignmentReturnedSharp, LiveTvRounded, Loop, PauseCircleOutline, PlayCircleOutline, Shuffle, SkipNext, SkipPrevious, VolumeMuteOutlined, VolumeUpOutlined } from '@material-ui/icons';
 import { useEffect, useRef, useState } from 'react';
 import ReactPlayer from 'react-player/lazy';
 import { Range } from 'react-range';
@@ -12,9 +12,10 @@ export default function CurrentlyPlaying(props) {
     const [volume, setVolume] = useState(.5);
     const [muted, setMuted] = useState(false);
     const [seek, setSeek] = useState(0);
+    const [player, setPlayer] = useState({})
     const ref = useRef();
     const update = e => {
-        const player = ref.current.getInternalPlayer();
+        //const _player = ref.current.getInternalPlayer();
         switch(e.target.dataset?.type){
             case 'Play': case 'Pause':
                 setPlaying(!playing);
@@ -49,6 +50,7 @@ export default function CurrentlyPlaying(props) {
         corktaint.player.refresh();
     },[props.player,playing,looping,muted,volume])
     useEffect(()=>corktaint.player.togglePause=()=>setPlaying(!playing),[playing])
+    useEffect(()=>setShuffle(false),[props.player])
 
     const buttonImage={
         Play:<PlayCircleOutline/>,
@@ -76,12 +78,13 @@ export default function CurrentlyPlaying(props) {
     const onDuration = duration => setDuration(secondsToTimestamp(duration));
 
     const fetchSongInfo = _url =>{
+        if(title||artist)return;
         const url=_url.replace(/list=.*&/,'');
-        console.log(url,_url)
+        console.log(url,_url);
+        corktaint.startSong(url);
         fetch(`https://noembed.com/embed?url=${url}`).then(r=>r.json()).then(data=>{
             console.log(data);
             if(!data.author_name)return;
-            console.log('updating');
             let artist = data.author_name.replace(' - Topic','').replace('VEVO','');
             let title = data.title.replace(' [Official Audio]','')
             .replace(artist,'')
@@ -90,6 +93,7 @@ export default function CurrentlyPlaying(props) {
                 .replace(/ \[Official Video]/i,'')
                 .replace(/ \(Official Video\)/i,'')
                 .replace(/ \(Official Audio\)/i,'')
+                .replace(/ \[Official Audio]/i,'')
                 .replace(/ \(audio\)/i,'')
                 .replace(/ \(Official Music Video\)/i,'')
                 .replace(/ \[Official Music Video]/i,'')
@@ -100,21 +104,78 @@ export default function CurrentlyPlaying(props) {
             setThumbnail(data.thumbnail_url);
         });
     }
+    const shuffleArray = array => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
     const onStart = () => {
+        setTitle('');
+        setArtist('');
+        setThumbnail(null);
         const player = ref.current.getInternalPlayer();
         fetchSongInfo(props.player);
         if(!player.mute)return;
         if(player.getVideoUrl().match(/list=/))setPlaylist(true);
-        setDuration(secondsToTimestamp(player.getDuration()));
-        
+        setDuration(secondsToTimestamp(player.getDuration()));   
     }
     const onReady = () => {
         const player = ref.current.getInternalPlayer();
-        if(!player.mute)return;
-        player.addEventListener('onStateChange',state=>{if(state.data==1){
-            setDuration(secondsToTimestamp(player.getDuration()));
-            fetchSongInfo(player.getVideoUrl());
-        }});
+        if(player.mute){
+            player.addEventListener('onStateChange',state=>{
+                if(state.data==1){
+                    setDuration(secondsToTimestamp(player.getDuration()));
+                    fetchSongInfo(player.getVideoUrl());
+                }
+                if(state.data==0){
+                    setTitle('');
+                    setArtist('');
+                    setThumbnail(null);
+                }
+        });
+            setPlayer(player);
+        }else{
+            const widget = window.SC.Widget(document.querySelector('#main-player>iframe'));
+            widget.bind(window.SC.Widget.Events.PLAY,()=>{
+                widget.getDuration(duration=>setDuration(secondsToTimestamp(duration/1000)));
+                widget.getSounds(sounds=>{
+                    setPlaylist(sounds.length>1);
+                    widget.songs=sounds;
+                })
+                widget.getCurrentSound(obj=>{
+                    console.log(obj);
+                    setTitle(obj.publisher_metadata.release_title||obj.title);
+                    setArtist(obj.publisher_metadata.artist);
+                    setThumbnail(obj.artwork_url);
+                    corktaint.startSong(obj.permalink_url);
+                });
+                widget.currentSong=-1;
+                widget.songOrder=[];
+                widget.seek=num=>window.SC.Widget(document.querySelector('#main-player>iframe')).skip(num);
+                widget.setShuffle=value=>{
+                    if(widget.shuffleMode = value){
+                        widget.currentSong=-1;
+                        widget.songOrder = shuffleArray(Object.keys(widget.songs).map(a=>Number(a)));
+                        console.log(widget.songOrder);
+                        //widget.nextVideo();
+                    }
+                }
+                widget.nextVideo=()=>{
+                    console.log(widget);
+                    if(!widget.shuffleMode) widget.next()
+                    else widget.seek(widget.songOrder[++widget.currentSong]);
+                    if(widget.shuffleMode)console.log(widget.songOrder[widget.currentSong]);
+                }
+                widget.previousVideo=()=>{
+                    if(!widget.shuffleMode) widget.prev()
+                    else widget.seek(widget.songOrder[--widget.currentSong]);
+                }
+                widget.bind(window.SC.Widget.Events.FINISH,()=>widget.nextVideo())
+                setPlayer(widget);
+            });
+        }
 
     }
 
@@ -122,6 +183,7 @@ export default function CurrentlyPlaying(props) {
     const updateSeek = value =>{
         ref.current.seekTo(value);
         setSeek(value);
+        corktaint.seek(value);
     }
     const volPanel ={
         to:{height:'75px',padding:'5px 2px'},
@@ -149,7 +211,7 @@ export default function CurrentlyPlaying(props) {
     return <div className='currently-playing-container row-center'>
         <div className='mini-player' value={playing} onClick={update} data-type='Play'>
             {thumbnail && <img src={thumbnail} alt='Song Thumbnail'/>}
-            {<ReactPlayer url={props.player} playing={playing} loop={looping} muted={muted} volume={Math.min(1,Math.pow(volume*1.2,2.8)+(.5-volume)*.02)} ref={ref} onProgress={onProgress} onDuration={onDuration} onReady={onReady} onStart={onStart}/>}
+            {<ReactPlayer id='main-player' url={props.player} playing={playing} loop={looping} muted={muted} volume={Math.min(1,Math.pow(volume*1.2,2.8)+(.5-volume)*.02)} ref={ref} onProgress={onProgress} onDuration={onDuration} onReady={onReady} onStart={onStart}/>}
         </div>
         <h5 className='mini-player-title'>
             <p>{artist}</p>
